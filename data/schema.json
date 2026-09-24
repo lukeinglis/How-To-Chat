@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Eval record",
+  "description": "One prompt per JSONL line. should_flag is the final decision; cues records what is present even when an exemption means no flag.",
+  "type": "object",
+  "required": ["id", "prompt", "should_flag", "cues", "domain", "source", "review"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^c\\d{2}-(pos|neg|bord)-\\d{3}$|^ext-[a-z0-9_]+-\\d+$",
+      "description": "Seed: c01-pos-001. External: ext-<source>-<n>."
+    },
+    "prompt": { "type": "string", "minLength": 1 },
+    "prior_turns": {
+      "type": "array",
+      "description": "Earlier turns, needed for cue 5.",
+      "items": {
+        "type": "object",
+        "required": ["role", "content"],
+        "properties": {
+          "role": { "enum": ["user", "assistant"] },
+          "content": { "type": "string" }
+        }
+      },
+      "default": []
+    },
+    "should_flag": {
+      "enum": ["yes", "no", "borderline"],
+      "description": "borderline records are kept for review and excluded from headline metrics."
+    },
+    "cues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["cue", "trigger"],
+        "properties": {
+          "cue": { "type": "integer", "minimum": 1, "maximum": 12 },
+          "strength": {
+            "type": ["integer", "null"],
+            "minimum": 1,
+            "maximum": 3,
+            "description": "Only where research grades it (cue 1: statement=1, belief=2, conviction=3). Otherwise null."
+          },
+          "trigger": {
+            "type": ["string", "null"],
+            "description": "Exact text from the prompt. Offsets are computed by script."
+          }
+        }
+      }
+    },
+    "exemption": {
+      "enum": [
+        null,
+        "venting_no_decision",
+        "deliberate_one_sided_task",
+        "preference_as_constraint",
+        "decision_made_execute",
+        "invites_disagreement",
+        "factual_lookup"
+      ]
+    },
+    "near_miss_of": {
+      "type": ["integer", "null"],
+      "description": "For negatives: the cue this example imitates."
+    },
+    "pair": {
+      "type": ["string", "null"],
+      "description": "id of the matched example."
+    },
+    "domain": {
+      "enum": ["health", "money", "relationships", "work", "home", "hobbies", "auto", "pets", "politics", "education", "other"]
+    },
+    "source": {
+      "type": "string",
+      "description": "handwritten, or the external dataset name (sharma_answer, elephant_oeq, ...)."
+    },
+    "review": {
+      "enum": ["approved", "pending"],
+      "description": "approved = reviewed by Luke."
+    },
+    "notes": { "type": "string" }
+  }
+}

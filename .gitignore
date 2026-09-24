@@ -1,0 +1,14 @@
+# External datasets are downloaded on demand, never committed (licensing + eval contamination)
+data/external/*
+!data/external/.gitkeep
+
+# Eval outputs
+eval/results/
+
+# Tooling
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+.env
+.DS_Store
