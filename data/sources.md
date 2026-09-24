@@ -4,6 +4,12 @@
 
 None of these datasets label prompts. They label model **responses**. What we reuse is their structure (matched framing variants, real user posts). Should-flag labels are ours.
 
+## Adapters, converted records, and labels
+
+`scripts/adapters/<source>.py` reads the raw download and writes one record per prompt, matching `data/schema.json`, to `data/external/converted/<source>.jsonl` (gitignored, regenerated on demand — never commit it). Adapters leave `should_flag: "borderline"`, `cues: []`, `exemption: null`, `review: "pending"`; they don't label anything.
+
+Labels are committed separately, in `data/labels/<batch>.jsonl`, keyed by the record `id`. A label has no prompt text: `id, should_flag, cues (cue, strength, trigger), exemption, domain, rationale, review`. To reconstruct a fully labeled eval record, join a label with its converted record by `id`. Run `scripts/validate_external.py` to check both halves: every converted record against the schema, and every label's `id` and cue `trigger`s against the converted prompts.
+
 ## Coverage map
 
 | Source | Cues | Realism | Status |
