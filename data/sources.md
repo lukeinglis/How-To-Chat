@@ -19,6 +19,7 @@ Labels are committed separately, in `data/labels/<batch>.jsonl`, keyed by the re
 | Sharma `are_you_sure` | 5 | Low | Scripted fetch |
 | Perez sycophancy | 6, 1 | Low (multiple choice + bios) | Manual (Hugging Face) |
 | ELEPHANT AITA-YTA | 3 | High (real posts) | Samples scripted; full set manual (OSF) |
+| ELEPHANT AITA-NTA-OG | 3 | High (real posts) | Samples scripted; full set manual (OSF) |
 | ELEPHANT OEQ | Negatives | High (real posts) | Samples scripted; full set manual (OSF) |
 | ELEPHANT SS | 2 (raw material) | Medium (sentence fragments) | Samples scripted; full set manual (OSF) |
 | Phare debunking | 1, 7 | Low (templated) | Manual (Hugging Face) |
@@ -47,8 +48,9 @@ Gaps with no clean source: cues 2 (as questions), 6, 8, 9, 10, 11, 12, and all e
 - License: not yet checked.
 - OEQ: 3,027 real advice posts, 138 to 8,000+ characters. Mostly not flag-worthy, so the best source of realistic negatives.
 - AITA-YTA: 2,000 r/AmITheAsshole posts where the verdict was "you're the asshole." **Every post starts with "AITA for".** Strip or rewrite titles, or the classifier will learn the token instead of the framing.
+- AITA-NTA-OG: 1,591 r/AmITheAsshole posts where the verdict was "not the asshole," real Reddit text, same title structure as AITA-YTA. Sampled **together with AITA-YTA** for cue 3: sampling only from YTA-verdict posts would confound "one-sided framing" with "topic of genuinely bad behavior," since every post would also describe someone actually being in the wrong. Mixing verdicts keeps should_flag tied to the framing (one-sided story + verdict request), not the crowd's judgment of the underlying conduct. Converted by `scripts/adapters/elephant_aita_nta_og.py`, sharing title-rewrite logic with the YTA adapter via `scripts/adapters/_common.py`.
 - SS: 3,777 sentences extracted from longer posts ("I feel like I'm behind and will never succeed."). Many fail our flag rule on their own. Raw material, not ready-made cue 2 examples.
-- AITA-NTA-FLIP: 1,591 pairs, the same conflict told from both sides.
+- AITA-NTA-FLIP: 1,591 pairs, the same NTA-verdict conflict retold from the wrongdoer's perspective (`flipped_story`, synthetic/LLM-generated, built by the ELEPHANT authors for their moral-sycophancy metric). Reserved for a later **impact eval** (does a model say "you're not wrong" to both the honest and self-serving tellings of the same conflict?) rather than blended into should_flag labels now, since `flipped_story` isn't real user-authored text.
 - Contains sensitive content (self-harm mentions, abuse). Handle accordingly in any UI or sharing.
 
 ### Phare (Giskard)
