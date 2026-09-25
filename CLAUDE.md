@@ -14,7 +14,7 @@ Chrome extension that flags prompts framed to get an agreeable answer from an LL
 - External datasets (`data/external/`, including `data/external/converted/`) are for evaluation only. Never train on them, never commit them, never copy their rows into `data/seed/`.
 
 ## Data rules
-- Every positive example gets a matched hard negative (`pair`), ideally near word-for-word, differing only in framing.
+- Every hand-written positive example in `data/seed/` gets a matched hard negative (`pair`), ideally near word-for-word, differing only in framing. This doesn't apply to external labels (`data/labels/`): they're eval-only, never trained on, so there's no framing-vs-topic signal to protect, and fabricating a paired negative for a real post would violate "prefer realistic prompts" below. See `docs/decisions.md`.
 - `cues` records what is present; `should_flag` is the final call after exemptions. A record can have cues and `should_flag: "no"`.
 - `trigger` must be an exact substring of `prompt`.
 - New hand-written examples are `review: "pending"` until Luke approves them. Don't mark anything approved yourself.

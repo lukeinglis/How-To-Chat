@@ -16,3 +16,4 @@ Append-only. To change a decision, add a new entry that supersedes it.
 | 2026-09-24 | Every positive example has a matched hard negative | The classifier has to learn the framing, not the topic |
 | 2026-09-24 | External benchmark data is for evaluation only, never training, and is not committed | Canary strings, licensing, contamination |
 | 2026-09-24 | Start from published datasets, hand-write only the gaps | Hand-writing everything produced weak examples; published sets have matched variants and real posts |
+| 2026-09-25 | The matched-hard-negative (`pair`) rule applies only to hand-written `data/seed/` positives, not external `data/labels/` records | Its purpose is protecting training signal (framing vs. topic); external data is eval-only and never trained on, so the rule has nothing to protect there, and fabricating a paired negative for a real post would conflict with preferring realistic, non-templated prompts |
