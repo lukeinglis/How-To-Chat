@@ -1,8 +1,16 @@
-"""v0 heuristic detector: cues 1 (asserted stance) and 6 (identity cue on a
-contested topic) only, per docs/taxonomy.md. Regex-based, no exemption
-handling and no relevance/consequence reasoning -- the eval harness's
-per-exemption false-positive breakdown is exactly the tool for measuring how
-much that costs, and its per-cue recall shows what's left to add.
+"""v0 heuristic detector, per docs/taxonomy.md's H/M layer column. Regex-based,
+no exemption handling and no relevance/consequence reasoning -- the eval
+harness's per-exemption false-positive breakdown is exactly the tool for
+measuring how much that costs, and its per-cue recall shows what's left to
+add.
+
+Confidence varies a lot by cue:
+- Cue 1 has seed data (data/seed/cue01.jsonl) and is validated against it:
+  100% precision, including the hedge trap below.
+- Cues 4, 5, 6, 7, 8, 11, 12 have no seed data yet (roadmap item 2 is still
+  open for cues 6-12) and are pattern-only best guesses from the taxonomy's
+  prose and examples, not measured against labeled traps. Treat their
+  precision as unknown until seed batches exist to score them.
 
 Cue 1's biggest false-positive trap (see data/seed/cue01.jsonl neg-004): a
 hedged belief ("I think X, but I'm not sure") isn't an asserted stance. The
@@ -32,6 +40,64 @@ IDENTITY_TOPICS = (
 )
 CUE6_IDENTITY = re.compile(rf"\bas an?\s+(?:{IDENTITY_TOPICS})\b", re.I)
 
+# Cue 4 needs both halves present: taxonomy.md is explicit that a feedback
+# request alone isn't the cue, only ownership/pride language paired with one.
+CUE4_ATTACHMENT = re.compile(
+    r"\bi (?:wrote|made|created|built|designed) this\b|"
+    r"\bi'?m (?:really |so |quite )?proud of (?:this|it)\b|"
+    r"\bi love this (?:idea|poem|plan|design|essay|code|story|draft)\b",
+    re.I,
+)
+CUE4_FEEDBACK_REQUEST = re.compile(
+    r"\bthoughts\?|\bwhat do you think\b|\bfeedback\b|\bcritique\b|"
+    r"\breview (?:this|it)\b|\bhow (?:is|do you like) (?:it|this)\b",
+    re.I,
+)
+
+# Cue 5 needs prior_turns (it's a follow-up-only cue) plus a repeated stance
+# with no justification offered for it.
+CUE5_PUSHBACK = re.compile(
+    r"\bare you sure\b|\bi (?:still )?(?:think|believe) (?:it'?s|it is|that'?s|that is)\b",
+    re.I,
+)
+CUE5_JUSTIFICATION = re.compile(
+    r"\bbecause\b|\bsince\b|\bhere'?s why\b|\bactually,?\b|"
+    r"\bi (?:checked|found|looked|read|verified)\b|\baccording to\b|\bthe reason is\b",
+    re.I,
+)
+
+CUE7_AUTHORITY = re.compile(
+    r"\beveryone knows\b|\bexperts agree\b|\bmy doctor said\b|\bmany people agree\b|"
+    r"\ball my friends (?:say|think|agree)\b|\bmost people (?:believe|think|say)\b",
+    re.I,
+)
+
+CUE8_ANSWER_SPACE = re.compile(
+    r"\byes or no\b|\bone word\b|\bin (?:one|a single) word\b|\banswer briefly\b|"
+    r"\bno caveats\b|\bdon'?t (?:lecture me|give me a lecture)\b",
+    re.I,
+)
+
+# Cue 11 needs both halves: supplied sources plus a conclusion-shaped ask
+# about them. Neither alone is the cue.
+CUE11_SOURCES = re.compile(
+    r"\bhere(?:'s| is| are) (?:\d+|a|an|some|several|many|few|couple of|"
+    r"two|three|four|five|six)\s+(?:articles?|sources?|studies|links?|papers?)\b",
+    re.I,
+)
+CUE11_CONCLUSION_ASK = re.compile(
+    r"\bsummarize\b|\bwhat (?:do|does) (?:they|this|these) (?:say|show|prove|confirm)\b",
+    re.I,
+)
+
+CUE12_SUPPORTIVE_ROLE = re.compile(
+    r"\bbe my hype ?man\b|\bbe my cheerleader\b|"
+    r"\bact as my (?:biggest supporter|cheerleader|hype ?man)\b|"
+    r"\bbe (?:encouraging|supportive)\b|\bonly (?:positive|supportive) feedback\b|"
+    r"\bdon'?t be (?:negative|critical|harsh)\b",
+    re.I,
+)
+
 
 def _has_cue1(prompt):
     for sentence in SENTENCE_SPLIT.split(prompt):
@@ -42,11 +108,29 @@ def _has_cue1(prompt):
     return False
 
 
+def _has_cue5(prompt, prior_turns):
+    if not prior_turns:
+        return False
+    return bool(CUE5_PUSHBACK.search(prompt)) and not CUE5_JUSTIFICATION.search(prompt)
+
+
 def predict(prompt, prior_turns):
     cues = []
     if _has_cue1(prompt):
         cues.append(1)
+    if CUE4_ATTACHMENT.search(prompt) and CUE4_FEEDBACK_REQUEST.search(prompt):
+        cues.append(4)
+    if _has_cue5(prompt, prior_turns):
+        cues.append(5)
     if CUE6_IDENTITY.search(prompt):
         cues.append(6)
+    if CUE7_AUTHORITY.search(prompt):
+        cues.append(7)
+    if CUE8_ANSWER_SPACE.search(prompt):
+        cues.append(8)
+    if CUE11_SOURCES.search(prompt) and CUE11_CONCLUSION_ASK.search(prompt):
+        cues.append(11)
+    if CUE12_SUPPORTIVE_ROLE.search(prompt):
+        cues.append(12)
 
     return {"should_flag": "yes" if cues else "no", "cues": cues}
