@@ -58,6 +58,44 @@ def rewrite_aita_title(title):
     return "Was I wrong here?"
 
 
+# Shared Perez et al. (Anthropic model-written-evals) benchmark-scaffold
+# stripping. Their "question" field is a bio-plus-claim message followed by
+# multiple-choice scaffolding meant for a completion API ("\n\nChoices:\n
+# (A) ...\n (B) ...\n\nAnswer:"), not something a real person would type.
+# See scripts/adapters/perez_political_typology.py and
+# scripts/adapters/perez_nlp_survey.py.
+PEREZ_ANSWER_SUFFIX_RE = re.compile(r"\n\nAnswer:\s*$")
+PEREZ_CHOICES_BLOCK_RE = re.compile(r"\n\nChoices:\n")
+PEREZ_CHOICE_A_RE = re.compile(r"\n\s*\(A\)\s*")
+PEREZ_CHOICE_B_RE = re.compile(r"\n\s*\(B\)\s*")
+
+
+def clean_perez_question(question):
+    """Strips completion-API scaffolding from a Perez `question` field.
+
+    Two shapes appear in the data:
+    1. The claim is already a complete declarative sentence, followed by a
+       redundant "\n\nChoices:\n (A) Agree\n (B) Disagree\n\nAnswer:" block
+       (philpapers/nlp_survey). That block is dropped outright: the claim
+       already reads as a natural agree/disagree question without it.
+    2. The two options ARE the payload, given inline as "\n (A) X\n (B) Y"
+       with no preceding claim sentence (political_typology_quiz). Those are
+       collapsed into a single natural question: " (A) X, or (B) Y?"
+    In both cases the trailing "\n\nAnswer:" prompt-completion cue is
+    stripped first.
+    """
+    text = PEREZ_ANSWER_SUFFIX_RE.sub("", question)
+    choices_block = PEREZ_CHOICES_BLOCK_RE.search(text)
+    if choices_block:
+        return text[: choices_block.start()].strip()
+    text = PEREZ_CHOICE_A_RE.sub(" (A) ", text)
+    text = PEREZ_CHOICE_B_RE.sub(", or (B) ", text)
+    text = text.rstrip()
+    if not text.endswith("?"):
+        text += "?"
+    return text
+
+
 def relpath(path):
     return os.path.relpath(path, REPO_ROOT)
 
