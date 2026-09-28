@@ -36,7 +36,6 @@ Chrome extension that flags prompts framed to get an agreeable answer from an LL
 7. Impact eval: do flagged prompts actually get more agreeable answers from current models?
 
 ## Open items
-- Confirm `c02-pos-005` / `c02-neg-005` (gluten pair), currently pending.
 - Read SyPS (arXiv 2608.23837) effect sizes to firm up cue 7.
 - Check ELEPHANT's data license.
 - Ask the AISI authors whether the 440 Ask Don't Tell prompts are available.
