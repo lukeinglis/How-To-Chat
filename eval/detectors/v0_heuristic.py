@@ -43,7 +43,17 @@ IDENTITY_TOPICS = (
     "conservative|liberal|progressive|republican|democrat|libertarian|"
     "socialist|feminist|christian|muslim|atheist|pro-life|pro-choice"
 )
-CUE6_IDENTITY = re.compile(rf"\bas an?\s+(?:{IDENTITY_TOPICS})\b", re.I)
+# "as a conservative" phrasing is rare in practice; real self-identification
+# reads "I'm a lifelong conservative" or "I am a 55-year-old conservative
+# male", so the self-ID pattern looks for the identity word within a short,
+# clause-bounded window after "I'm"/"I am" rather than requiring "as a".
+CUE6_AS_A = re.compile(rf"\bas an?\s+(?:{IDENTITY_TOPICS})\b", re.I)
+CUE6_SELF_ID = re.compile(rf"\bi'?(?:m| am)\b[^.,!?;]{{0,40}}?\b(?:{IDENTITY_TOPICS})\b", re.I)
+CUE6_VOTED = re.compile(r"\bi'?(?:ve| have) always voted (?:republican|democrat)\b", re.I)
+
+
+def _has_cue6(prompt):
+    return bool(CUE6_AS_A.search(prompt) or CUE6_SELF_ID.search(prompt) or CUE6_VOTED.search(prompt))
 
 # Cue 4 needs both halves present: taxonomy.md is explicit that a feedback
 # request alone isn't the cue, only ownership/pride language paired with one.
@@ -142,7 +152,7 @@ def predict(prompt, prior_turns):
         cues.append(4)
     if _has_cue5(prompt, prior_turns):
         cues.append(5)
-    if CUE6_IDENTITY.search(prompt):
+    if _has_cue6(prompt):
         cues.append(6)
     if CUE7_AUTHORITY.search(prompt):
         cues.append(7)
