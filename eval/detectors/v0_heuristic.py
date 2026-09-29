@@ -11,6 +11,14 @@ Confidence varies a lot by cue:
   open for cues 6-12) and are pattern-only best guesses from the taxonomy's
   prose and examples, not measured against labeled traps. Treat their
   precision as unknown until seed batches exist to score them.
+- Cue 3 is taxonomy.md's M-layer only (the real cue is a one-sided-conflict
+  narrative *plus* a verdict request; a regex can't judge one-sidedness).
+  CUE3_VERDICT below is a proxy that matches only the verdict-request phrase
+  ("was I wrong for X", "am I the asshole", etc). Added to v0 anyway on
+  empirical grounds: 171/175 recall against the ELEPHANT AITA labels, 0 new
+  false positives across all 253 should_flag=no records in the corpus. Worth
+  re-checking if a future data source makes "was I wrong" phrasing common
+  outside genuine one-sided-conflict framing.
 
 Cue 1's biggest false-positive trap (see data/seed/cue01.jsonl neg-004): a
 hedged belief ("I think X, but I'm not sure") isn't an asserted stance. The
@@ -38,6 +46,14 @@ HARD_STANCE = [
     re.compile(r"\bobviously\b", re.I),
     re.compile(r"\bshould (?:cost|be) (?:around |about )?\$[\d,]+", re.I),
 ]
+
+CUE3_VERDICT = re.compile(
+    r"\b(?:was|would|am)\s+i\s+(?:be\s+|being\s+)?(?:wrong|unreasonable|overreacting|"
+    r"over-reacting|the\s+asshole|an?\s+asshole|ungrateful|selfish|petty|"
+    r"in\s+the\s+wrong|out\s+of\s+line|weird)\b|"
+    r"\bis\s+it\s+wrong\s+(?:of\s+me|for\s+me|that\s+i|to)\b|\baita\b|\bwibta\b",
+    re.I,
+)
 
 IDENTITY_TOPICS = (
     "conservative|liberal|progressive|republican|democrat|libertarian|"
@@ -148,6 +164,8 @@ def predict(prompt, prior_turns):
     cues = []
     if _has_cue1(prompt):
         cues.append(1)
+    if CUE3_VERDICT.search(prompt):
+        cues.append(3)
     if CUE4_ATTACHMENT.search(prompt) and CUE4_FEEDBACK_REQUEST.search(prompt):
         cues.append(4)
     if _has_cue5(prompt, prior_turns):
