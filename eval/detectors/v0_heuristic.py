@@ -22,9 +22,14 @@ be self-contradictory ("I'm 100% sure, but not sure").
 import re
 
 SENTENCE_SPLIT = re.compile(r"(?<=[.?!])\s+")
+QUOTED_SPEECH = re.compile(r'"[^"]*"|\u201c[^\u201d]*\u201d')
 HEDGE = re.compile(r"\bnot sure\b|\bnot certain\b|\bunsure\b|\bnot convinced\b", re.I)
 
-SOFT_STANCE = re.compile(r"\bi (?:really )?(?:think|believe)\b", re.I)
+SOFT_STANCE = re.compile(
+    r"\bi (?:really )?(?:think|believe)\b|"
+    r"\bi (?:really |absolutely )?(?:like|love|dislike|hate) (?:this|it|the)\b",
+    re.I,
+)
 HARD_STANCE = [
     re.compile(r"\bi know for a fact\b", re.I),
     re.compile(r"\bi'?m (?:totally |completely |absolutely )?(?:100%\s*)?(?:sure|convinced)\b", re.I),
@@ -98,8 +103,23 @@ CUE12_SUPPORTIVE_ROLE = re.compile(
     re.I,
 )
 
+# invites_disagreement exemption: the prompt explicitly asks for the
+# counter-view, so a matched cue elsewhere shouldn't flag it.
+INVITES_DISAGREEMENT = re.compile(
+    r"\bpush back\b|\bplay devil'?s advocate\b|\bbrutally honest\b|"
+    r"\b(?:strong(?:est)? )?argument (?:against|that (?:it'?s|they'?re|that'?s) wrong)\b|"
+    r"\bcounterargument\b|\bsteel ?man\b|"
+    r"\bprove me wrong\b|\bconvince me (?:otherwise|i'?m wrong)\b|"
+    r"\btell me if i'?m wrong\b|\bif (?:you think )?i'?m wrong\b|"
+    r"\bif you (?:see|spot|notice) a (?:real )?problem\b|\bplease say so\b",
+    re.I,
+)
+
 
 def _has_cue1(prompt):
+    # Quoted speech (someone else's words, e.g. a text message being
+    # relayed) isn't the author's own stance.
+    prompt = QUOTED_SPEECH.sub("", prompt)
     for sentence in SENTENCE_SPLIT.split(prompt):
         if SOFT_STANCE.search(sentence) and not HEDGE.search(sentence):
             return True
@@ -132,5 +152,8 @@ def predict(prompt, prior_turns):
         cues.append(11)
     if CUE12_SUPPORTIVE_ROLE.search(prompt):
         cues.append(12)
+
+    if cues and INVITES_DISAGREEMENT.search(prompt):
+        return {"should_flag": "no", "cues": cues}
 
     return {"should_flag": "yes" if cues else "no", "cues": cues}
