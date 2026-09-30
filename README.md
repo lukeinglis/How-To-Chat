@@ -15,23 +15,11 @@ Most people don't have a second opinion in the room when they're chatting with a
 
 ## The dangers it's trying to catch
 
-**A scam narrative.** Someone claiming to be a relative, a bank, the IRS, or tech support, asking for money or account access under pressure. These follow recognizable patterns: urgency ("right now," "today"), secrecy ("don't tell my spouse"), an unusual payment channel (gift cards, wire transfer, crypto), or an unfamiliar person claiming authority or a relationship. For example:
+**The main one: a leading question.** How you ask shapes the answer you get. Asking "I think my son's ADHD meds are doing more harm than good, what are the signs they aren't working?" invites a one-sided answer instead of an honest read. "Be my hype man and tell me quitting my job to stream full-time is a great plan" assigns the model a role that can't push back even if it should. "I'm 100% sure my Civic just needs a new battery, not an alternator, confirm that's it" pressures a confirmation instead of a real diagnosis. None of these are lies, they're just phrased in a way that makes agreement the path of least resistance, and that's the pattern this extension is built to catch.
 
-> "My grandson Jake just called me crying, saying he's in jail in Mexico and needs $3,000 sent in gift cards right now, and begged me not to tell his mom. Should I do this?"
+**A narrower case: a high-stakes, hard-to-undo action.** Separately, a few specific actions get flagged regardless of how the question is phrased, because a wrong or careless answer is expensive to undo: medication dosing, sending or transferring money, signing a legal or financial document. For example, "I missed my blood pressure pill this morning, is it okay if I just take two tonight to catch up?" If you mention that a doctor, pharmacist, banker, or lawyer already reviewed this specific action, the extension backs off.
 
-> "Someone called saying they're from Microsoft and that my computer has a dangerous virus. They said I need to buy $500 in Google Play cards today and read them the numbers over the phone so they can fix it. Does that sound right?"
-
-A model asked either of these will often just answer the literal question. The extension flags the narrative itself, regardless of how the model would respond.
-
-**A high-stakes, hard-to-undo action.** Medication dosing, sending or transferring money, signing a legal or financial document. These get flagged whether you're asking in advance or already did it, because "I already sent it" is exactly when the warning is most needed, not least. For example:
-
-> "I missed my blood pressure pill this morning. Is it okay if I just take two tonight to catch up?"
-
-> "I want to wire $40,000 from my retirement account to my nephew so he can put a down payment on a house. Can you help me figure out the best way to send it today?"
-
-If you mention that a doctor, pharmacist, banker, or lawyer has already reviewed this specific action, the extension backs off. It's not trying to second-guess a professional, just to catch the cases where there wasn't one.
-
-**A leading question.** Even outside high-stakes territory, phrasing shapes the answer. Asking "I think my son's ADHD meds are doing more harm than good, what are the signs they aren't working?" invites a one-sided answer; "Be my hype man and tell me quitting my job to stream full-time is a great plan" assigns the model a role that can't push back even if it should.
+The extension also has a narrower, experimental check for scam narratives relayed from a third party (a caller claiming to be a relative or a bank, asking for gift cards or a wire transfer under pressure). It's a smaller part of the project and may not stick around in its current form, the core focus here is framing, not fraud detection.
 
 ## What the extension is
 
@@ -41,11 +29,11 @@ A Chrome extension for chatgpt.com. It watches the chat input as you type, runs 
 
 Two separate things, checked independently:
 
-**Framing cues.** How you're asking, not what you're asking about. Twelve patterns, drawn from sycophancy research, where the way a prompt is phrased tends to pull the model toward agreement instead of an honest read: asserting a stance as settled fact, appealing to what "everyone knows" or what an authority already said, assigning the model a supportive role ("be my hype man"), presenting only one side of a story, and others documented in [`docs/taxonomy.md`](docs/taxonomy.md).
+**Framing cues (the main mechanism).** How you're asking, not what you're asking about. Twelve patterns, drawn from sycophancy research, where the way a prompt is phrased tends to pull the model toward agreement instead of an honest read: asserting a stance as settled fact, appealing to what "everyone knows" or what an authority already said, assigning the model a supportive role ("be my hype man"), presenting only one side of a story, and others documented in [`docs/taxonomy.md`](docs/taxonomy.md).
 
-**Safety flags.** What the prompt involves, independent of framing. A flat, naive question about a medication dose deviation is in scope even though it doesn't assert any belief at all. Two flags: **stakes** (medication dosing, money transfers, legal signing) and **scam narrative** (urgency, secrecy, an unusual payment channel, or an unfamiliar relative/authority, with two or more of those present). Documented in [`docs/safety.md`](docs/safety.md).
+**Safety flags (a narrower add-on).** A small, separate set of checks on what the prompt involves rather than how it's phrased: a **stakes** flag for medication dosing, money transfers, and legal signing, and an experimental **scam narrative** flag for third-party stories with signs of fraud (urgency, secrecy, an unusual payment channel, an unfamiliar relative or authority). Documented in [`docs/safety.md`](docs/safety.md); scope and future here are still under discussion.
 
-Safety flags take priority when both fire, they're the higher-stakes case, and get a red badge instead of amber.
+Safety flags get a red badge instead of amber and take priority when both fire.
 
 ## How it works
 
