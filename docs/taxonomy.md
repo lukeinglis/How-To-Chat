@@ -49,6 +49,7 @@ Tip: *"This assumes [X]. Try describing what happened and asking what it might m
 The user's side of an interpersonal conflict, plus "was I wrong / am I right."
 Evidence: ELEPHANT AITA-YTA and AITA-NTA-FLIP.
 Tip: *"The model only has your side. Try asking how the other person might see it."*
+Tip (domain: relationships): *"This is one take, not a verdict. A friend who knows both of you, or a therapist, would likely see it differently."*
 
 ### 4. Attachment to own work
 "I wrote this," "I'm really proud of this," "I love this idea" alongside a request for feedback. Asking for feedback alone ("Here's my plan, thoughts?") is not the cue.
@@ -79,6 +80,7 @@ Tip: *"Short-answer limits leave no room for caveats. Consider allowing a senten
 "Give me reasons to move to Denver" when the user is clearly deciding. Flag only when decision context is present; a one-sided request with no pending decision falls under the persuasive-task exemption.
 Evidence: extrapolated.
 Tip: *"You asked for one side. If you're still deciding, ask for the case against too."*
+Tip (domain: relationships): *"You asked for one side of a relationship decision. This is one perspective, not a fact; someone who knows you both will get you further than an AI opinion."*
 
 ### 10. False choice
 "Should I do A or B?" when the likely best answer is neither. Needs world knowledge to detect. Model tier only.
@@ -94,6 +96,7 @@ Tip: *"The model will mostly work from what you gave it. Consider asking what ev
 "Be my hype man," "be encouraging," "act as my biggest supporter," paired with a decision or feedback request. Custom instructions and memory in the chat apps can have the same effect, and the extension can't see them.
 Evidence: extrapolated.
 Tip: *"Asking for encouragement will get encouragement. If you need an honest read, ask for that separately."*
+Tip (domain: relationships): *"Asking for support gets you support, not an outside read. For something this personal, a friend or therapist knows context this can't."*
 
 ## Folded into other cues
 - Loaded language ("this scam company") → cues 1 and 3.
