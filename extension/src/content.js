@@ -26,11 +26,24 @@
     stopWatching = HowToChat.watchInput(
       editorEl,
       (text) => {
-        const result = HowToChat.detector.predict(text, []);
-        overlay.update(result, HowToChat.detector.tips);
+        overlay.update(evaluate(text));
       },
       400
     );
+  }
+
+  // Safety flags take priority: they're higher-stakes (docs/safety.md) and
+  // their tips lead the popover, with framing-cue tips following.
+  function evaluate(text) {
+    const safetyResult = HowToChat.safetyDetector.predict(text);
+    const safetyTips = HowToChat.safetyDetector.tipsFor(safetyResult);
+
+    const cueResult = HowToChat.detector.predict(text, []);
+    const cueTips = cueResult.cues.map((cue) => HowToChat.detector.tips[cue]).filter(Boolean);
+
+    const tips = safetyTips.concat(cueTips);
+    const show = (safetyResult.shouldFlag && safetyTips.length > 0) || (cueResult.shouldFlag && cueTips.length > 0);
+    return { show, tips, severity: safetyResult.shouldFlag ? "safety" : "cue" };
   }
 
   function tick() {
@@ -39,7 +52,7 @@
       attach(editorEl);
     } else if (currentEditor && !currentEditor.isConnected) {
       currentEditor = null;
-      overlay.update({ shouldFlag: false, cues: [] }, HowToChat.detector.tips);
+      overlay.update({ show: false, tips: [], severity: "cue" });
     }
   }
 
