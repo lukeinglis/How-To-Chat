@@ -19,11 +19,19 @@ marked and should not be treated as real numbers.
 should_flag: "borderline" records are excluded from headline precision/
 recall (per architecture.md) but reported separately.
 
+Reports two sections: framing cues (data/seed/*.jsonl + data/labels/)
+and safety flags (data/seed/safety/*.jsonl), per docs/safety.md. They
+use different ground-truth vocab (cues 1-12 vs. stakes/scam_narrative
+signals) and different exemption lists, so they're scored and reported
+separately rather than pooled into one precision/recall number.
+
 Detectors live in eval/detectors/<name>.py and expose:
     def predict(prompt: str, prior_turns: list) -> dict:
         return {"should_flag": "yes" | "no", "cues": [1, 3, ...]}
-"cues" is optional (default []); per-cue recall is only reported if a
-detector actually emits cue predictions. predict() only receives the
+For safety records, the same predict() may instead (or also) return
+"signals": ["urgency", ...]. Both "cues" and "signals" are optional
+(default []); per-cue/per-signal recall is only reported if a detector
+actually emits that kind of prediction. predict() only receives the
 prompt and prior turns, never the label, so a detector has no way to
 read the answer off the record it's being scored against.
 
@@ -54,6 +62,14 @@ EXEMPTIONS = [
     "factual_lookup",
 ]
 
+SAFETY_SEED_DIR = os.path.join(SEED_DIR, "safety")
+
+SAFETY_EXEMPTIONS = [
+    "professional_directed",
+    "known_recipient_routine_transfer",
+    "professional_context",
+]
+
 
 def read_jsonl(path):
     records = []
@@ -72,6 +88,16 @@ def read_jsonl(path):
 def load_seed_records(include_pending):
     records = []
     for path in sorted(glob.glob(os.path.join(SEED_DIR, "*.jsonl"))):
+        for r in read_jsonl(path):
+            if r.get("review") != "approved" and not include_pending:
+                continue
+            records.append(r)
+    return records
+
+
+def load_safety_records(include_pending):
+    records = []
+    for path in sorted(glob.glob(os.path.join(SAFETY_SEED_DIR, "*.jsonl"))):
         for r in read_jsonl(path):
             if r.get("review") != "approved" and not include_pending:
                 continue
@@ -158,18 +184,22 @@ def fmt_rate(rate):
     return "N/A" if rate is None else f"{rate:.1%}"
 
 
-def score(records, detector):
+def score(records, detector, extra_key="cues"):
     """Runs the detector over every record and buckets results by ground
     truth should_flag. Returns headline (yes/no only), borderline
     predictions, and raw per-record predictions for downstream breakdowns.
 
+    extra_key selects which optional per-record prediction list to read
+    off the detector's result: "cues" for framing records, "signals" for
+    safety records.
+
     The detector only ever sees prompt + prior_turns, never should_flag/
-    cues/exemption -- it has no way to read the answer off the record
-    it's being scored against."""
+    cues/signals/exemption -- it has no way to read the answer off the
+    record it's being scored against."""
     headline = {"tp": 0, "fp": 0, "fn": 0, "tn": 0}
     borderline_preds = {"yes": 0, "no": 0}
-    predictions = []  # (record, predicted_flag, predicted_cues)
-    detector_emits_cues = False
+    predictions = []  # (record, predicted_flag, predicted_extra)
+    detector_emits_extra = False
 
     for r in records:
         result = detector.predict(r["prompt"], r.get("prior_turns", []))
@@ -179,10 +209,10 @@ def score(records, detector):
                 f"Detector returned invalid should_flag {pred_flag!r} for "
                 f"record {r.get('id')}; must be 'yes' or 'no'"
             )
-        pred_cues = result.get("cues") or []
-        if pred_cues:
-            detector_emits_cues = True
-        predictions.append((r, pred_flag, pred_cues))
+        pred_extra = result.get(extra_key) or []
+        if pred_extra:
+            detector_emits_extra = True
+        predictions.append((r, pred_flag, pred_extra))
 
         gt = r["should_flag"]
         if gt == "borderline":
@@ -197,7 +227,7 @@ def score(records, detector):
         else:
             headline["tn"] += 1
 
-    return headline, borderline_preds, predictions, detector_emits_cues
+    return headline, borderline_preds, predictions, detector_emits_extra
 
 
 def per_cue_recall(predictions):
@@ -218,6 +248,52 @@ def per_cue_recall(predictions):
     return rows
 
 
+def per_signal_recall(predictions):
+    """Same idea as per_cue_recall, but for safety records: for each
+    signal present in any ground-truth yes record, the fraction of those
+    records where the detector's predicted signals included it."""
+    signals = sorted({
+        s["signal"]
+        for r, _, _ in predictions
+        if r["should_flag"] == "yes"
+        for s in r.get("signals", [])
+    })
+    rows = []
+    for signal in signals:
+        support = [
+            (r, pred_signals)
+            for r, pred_flag, pred_signals in predictions
+            if r["should_flag"] == "yes"
+            and any(s["signal"] == signal for s in r.get("signals", []))
+        ]
+        if not support:
+            continue
+        detected = sum(1 for _, pred_signals in support if signal in pred_signals)
+        rows.append((signal, detected, len(support)))
+    return rows
+
+
+def headline_for_subset(predictions, flag_type):
+    """Headline precision/recall restricted to records with flag ==
+    flag_type. Used to break the safety section out by stakes vs.
+    scam_narrative, since docs/decisions.md holds each to the same 90%
+    precision bar independently."""
+    headline = {"tp": 0, "fp": 0, "fn": 0, "tn": 0}
+    for r, pred_flag, _ in predictions:
+        if r.get("flag") != flag_type or r["should_flag"] == "borderline":
+            continue
+        gt = r["should_flag"]
+        if gt == "yes" and pred_flag == "yes":
+            headline["tp"] += 1
+        elif gt == "no" and pred_flag == "yes":
+            headline["fp"] += 1
+        elif gt == "yes" and pred_flag == "no":
+            headline["fn"] += 1
+        else:
+            headline["tn"] += 1
+    return headline
+
+
 def per_exemption_false_positives(predictions):
     """False-positive rate per exemption: among ground-truth "no" records
     carrying that exemption, how often the detector still predicted
@@ -236,11 +312,29 @@ def per_exemption_false_positives(predictions):
     return buckets
 
 
-def print_report(records, detector_name, headline, borderline_preds, predictions, detector_emits_cues):
+def print_report(
+    records,
+    detector_name,
+    headline,
+    borderline_preds,
+    predictions,
+    detector_emits_extra,
+    kind="cue",
+    exemptions=None,
+    title=None,
+):
+    """kind is "cue" (framing records, data/seed/*.jsonl + data/labels/)
+    or "signal" (safety records, data/seed/safety/*.jsonl); it picks the
+    per-cue/per-signal recall breakdown and its label. exemptions
+    defaults to the framing EXEMPTIONS list; pass SAFETY_EXEMPTIONS for
+    safety records."""
+    exemptions = EXEMPTIONS if exemptions is None else exemptions
     yes_n = sum(1 for r in records if r["should_flag"] == "yes")
     no_n = sum(1 for r in records if r["should_flag"] == "no")
     bord_n = sum(1 for r in records if r["should_flag"] == "borderline")
 
+    if title:
+        print(f"=== {title} ===\n")
     print(f"Detector: {detector_name}")
     print(f"Records scored: {len(records)} (yes={yes_n}, no={no_n}, borderline={bord_n})\n")
 
@@ -263,19 +357,34 @@ def print_report(records, detector_name, headline, borderline_preds, predictions
             f" predicted yes={borderline_preds['yes']}, no={borderline_preds['no']}"
         )
 
-    print("\nPer-cue recall (ground-truth yes records only):")
-    if not detector_emits_cues:
-        print("  detector does not emit cue-level predictions; skipped")
+    if kind == "signal":
+        flag_types = sorted({r.get("flag") for r in records if r.get("flag")})
+        if flag_types:
+            print("\nBy flag type:")
+            for flag_type in flag_types:
+                h = headline_for_subset(predictions, flag_type)
+                p = safe_div(h["tp"], h["tp"] + h["fp"])
+                r_ = safe_div(h["tp"], h["tp"] + h["fn"])
+                print(
+                    f"  {flag_type}: precision={fmt_rate(p)} (tp={h['tp']}, fp={h['fp']})"
+                    f"  recall={fmt_rate(r_)} (tp={h['tp']}, fn={h['fn']})"
+                )
+
+    label = "cue" if kind == "cue" else "signal"
+    print(f"\nPer-{label} recall (ground-truth yes records only):")
+    if not detector_emits_extra:
+        print(f"  detector does not emit {label}-level predictions; skipped")
     else:
-        rows = per_cue_recall(predictions)
+        rows = per_cue_recall(predictions) if kind == "cue" else per_signal_recall(predictions)
         if not rows:
-            print("  no ground-truth records carry any cue")
-        for cue, detected, support in rows:
-            print(f"  cue {cue:>2}: {fmt_rate(detected / support)}  ({detected}/{support})")
+            print(f"  no ground-truth records carry any {label}")
+        for key, detected, support in rows:
+            row_label = f"cue {key:>2}" if kind == "cue" else f"signal {key}"
+            print(f"  {row_label}: {fmt_rate(detected / support)}  ({detected}/{support})")
 
     print("\nFalse positives per exemption (ground-truth no records only):")
     buckets = per_exemption_false_positives(predictions)
-    for key in EXEMPTIONS + ["none"]:
+    for key in exemptions + ["none"]:
         if key not in buckets:
             continue
         fp, total = buckets[key]
@@ -303,8 +412,9 @@ def main():
 
     detector = load_detector(args.detector)
 
-    records = load_seed_records(args.include_pending) + load_external_records(args.include_pending)
-    if not records:
+    framing_records = load_seed_records(args.include_pending) + load_external_records(args.include_pending)
+    safety_records = load_safety_records(args.include_pending)
+    if not framing_records and not safety_records:
         sys.exit(
             "No eligible records found. All labels may still be review:pending "
             "-- pass --include-pending to sanity-check anyway."
@@ -312,8 +422,21 @@ def main():
     if args.include_pending:
         print("*** --include-pending set: this run includes unapproved labels and is not a real score ***\n")
 
-    headline, borderline_preds, predictions, detector_emits_cues = score(records, detector)
-    print_report(records, args.detector, headline, borderline_preds, predictions, detector_emits_cues)
+    if framing_records:
+        headline, borderline_preds, predictions, detector_emits_cues = score(framing_records, detector, extra_key="cues")
+        print_report(
+            framing_records, args.detector, headline, borderline_preds, predictions, detector_emits_cues,
+            kind="cue", exemptions=EXEMPTIONS, title="Framing cues",
+        )
+
+    if safety_records:
+        if framing_records:
+            print()
+        headline, borderline_preds, predictions, detector_emits_signals = score(safety_records, detector, extra_key="signals")
+        print_report(
+            safety_records, args.detector, headline, borderline_preds, predictions, detector_emits_signals,
+            kind="signal", exemptions=SAFETY_EXEMPTIONS, title="Safety flags",
+        )
 
 
 if __name__ == "__main__":
