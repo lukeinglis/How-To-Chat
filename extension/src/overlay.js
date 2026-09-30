@@ -23,6 +23,8 @@ window.HowToChat = window.HowToChat || {};
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
     }
     .badge:hover { background: #92400e; }
+    .badge.safety { background: #b91c1c; }
+    .badge.safety:hover { background: #991b1b; }
     .popover {
       position: fixed;
       z-index: 2147483647;
@@ -60,7 +62,7 @@ window.HowToChat = window.HowToChat || {};
       shadow.appendChild(this.popover);
 
       this.anchor = null;
-      this.cueTips = [];
+      this.tips = [];
       this.popoverOpen = false;
 
       document.body.appendChild(this.host);
@@ -74,11 +76,11 @@ window.HowToChat = window.HowToChat || {};
       this.reposition();
     }
 
-    update(result, tips) {
-      this.cueTips = result.cues.map((cue) => tips[cue]).filter(Boolean);
-      const show = result.shouldFlag && this.cueTips.length > 0;
-      this.badge.classList.toggle("hidden", !show);
-      if (!show) this.closePopover();
+    update(result) {
+      this.tips = result.tips;
+      this.badge.classList.toggle("hidden", !result.show);
+      this.badge.classList.toggle("safety", result.severity === "safety");
+      if (!result.show) this.closePopover();
       this.reposition();
     }
 
@@ -89,7 +91,7 @@ window.HowToChat = window.HowToChat || {};
 
     openPopover() {
       this.popover.innerHTML =
-        "<ul>" + this.cueTips.map((t) => `<li>${escapeHtml(t)}</li>`).join("") + "</ul>";
+        "<ul>" + this.tips.map((t) => `<li>${escapeHtml(t)}</li>`).join("") + "</ul>";
       this.popover.classList.remove("hidden");
       this.popoverOpen = true;
       this.reposition();

@@ -9,6 +9,7 @@
       "js": [
         "src/site-config.js",
         "src/detector.js",
+        "src/safety-detector.js",
         "src/overlay.js",
         "src/input-watcher.js",
         "src/content.js"
