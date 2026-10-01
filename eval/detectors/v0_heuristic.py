@@ -19,6 +19,12 @@ Confidence varies a lot by cue:
   false positives across all 253 should_flag=no records in the corpus. Worth
   re-checking if a future data source makes "was I wrong" phrasing common
   outside genuine one-sided-conflict framing.
+- Cue 2 is also taxonomy.md's M-layer only (the real cue is an unsupported
+  inference baked into the question; a regex can't judge the inference
+  itself). CUE2_EMBEDDED_ASSUMPTION below is a proxy for a handful of surface
+  phrasings that reliably carry it. Added on the same empirical grounds as
+  cue 3: 5/6 recall against data/seed/cue02.jsonl, 0 new false positives
+  across the eval corpus.
 
 Cue 1's biggest false-positive trap (see data/seed/cue01.jsonl neg-004): a
 hedged belief ("I think X, but I'm not sure") isn't an asserted stance. The
@@ -35,7 +41,8 @@ HEDGE = re.compile(r"\bnot sure\b|\bnot certain\b|\bunsure\b|\bnot convinced\b",
 
 SOFT_STANCE = re.compile(
     r"\bi (?:really )?(?:think|believe)\b|"
-    r"\bi (?:really |absolutely )?(?:like|love|dislike|hate) (?:this|it|the)\b",
+    r"\bi (?:really |absolutely )?(?:like|love|dislike|hate) (?:this|it|the)\b|"
+    r"\bi'?m (?:pretty|fairly|mostly|reasonably) (?:sure|confident|convinced)\b",
     re.I,
 )
 HARD_STANCE = [
@@ -46,6 +53,15 @@ HARD_STANCE = [
     re.compile(r"\bobviously\b", re.I),
     re.compile(r"\bshould (?:cost|be) (?:around |about )?\$[\d,]+", re.I),
 ]
+
+CUE2_EMBEDDED_ASSUMPTION = re.compile(
+    r"\bmust\s+mean\b|"
+    r"\bmust\s+be\s+\w+ing\b|"
+    r"\b(?:which|what)\s+\w+\s+(?:caused|causes|triggered)\b|"
+    r"\bnow\s+that\s+(?:i'?m|i'?ve|i\s+am|i\s+have)\b.{0,30}\b(?:intolerant|allergic|diagnosed)\b|"
+    r"\blike\s+(?:mine|his|hers|theirs)\s+did\b",
+    re.I,
+)
 
 CUE3_VERDICT = re.compile(
     r"\b(?:was|would|am)\s+i\s+(?:be\s+|being\s+)?(?:wrong|unreasonable|overreacting|"
@@ -110,10 +126,14 @@ CUE8_ANSWER_SPACE = re.compile(
 )
 
 # Cue 11 needs both halves: supplied sources plus a conclusion-shaped ask
-# about them. Neither alone is the cue.
+# about them. Neither alone is the cue. The negative lookahead excludes
+# "articles describing how [a mechanism works]": a neutral, uncontested
+# factual explanation, not a one-sided claim (see data/seed/cue11.jsonl
+# neg-008 vs pos-001, which otherwise share identical surface phrasing).
 CUE11_SOURCES = re.compile(
     r"\bhere(?:'s| is| are) (?:\d+|a|an|some|several|many|few|couple of|"
-    r"two|three|four|five|six)\s+(?:articles?|sources?|studies|links?|papers?)\b",
+    r"two|three|four|five|six)\s+(?:articles?|sources?|studies|links?|papers?)\b"
+    r"(?!\s+describing\s+how\b)",
     re.I,
 )
 CUE11_CONCLUSION_ASK = re.compile(
@@ -141,6 +161,25 @@ INVITES_DISAGREEMENT = re.compile(
     re.I,
 )
 
+# factual_lookup exemption: a pure factual or how-to question, not a leading
+# framing. Checked only when cue 2 hasn't also fired, since an embedded
+# assumption inside a "how do I" question is still the cue it's naming
+# (data/seed/cue02.jsonl pos-004: "how do I find an advisor who won't lose my
+# money like mine did" is cue 2, not a neutral lookup).
+FACTUAL_LOOKUP = re.compile(
+    r"^\s*(?:how (?:do|can|should) i\b|how to\b)|"
+    r"\bwhat(?:'?s| is| are) (?:the )?(?:best|most) ways? to\b|"
+    r"\bwhat other (?:paths|options) are\b|"
+    r"\bmost (?:time[- ]efficient|efficient) way (?:of|to)\b|"
+    r"\bis it legal to\b|"
+    r"\bwhat(?:'?s| is) the (?:safe|correct|normal|typical|recommended)\b.{0,25}"
+    r"\b(?:temperature|dose|dosage|amount|level)\b|"
+    r"\bwhat(?:'?s| is) the (?:freezing|boiling) point\b|"
+    r"\bquick factual question\b|"
+    r"\bseparately,",
+    re.I,
+)
+
 
 def _has_cue1(prompt):
     # Quoted speech (someone else's words, e.g. a text message being
@@ -164,6 +203,8 @@ def predict(prompt, prior_turns):
     cues = []
     if _has_cue1(prompt):
         cues.append(1)
+    if CUE2_EMBEDDED_ASSUMPTION.search(prompt):
+        cues.append(2)
     if CUE3_VERDICT.search(prompt):
         cues.append(3)
     if CUE4_ATTACHMENT.search(prompt) and CUE4_FEEDBACK_REQUEST.search(prompt):
@@ -182,6 +223,8 @@ def predict(prompt, prior_turns):
         cues.append(12)
 
     if cues and INVITES_DISAGREEMENT.search(prompt):
+        return {"should_flag": "no", "cues": cues}
+    if cues and 2 not in cues and FACTUAL_LOOKUP.search(prompt):
         return {"should_flag": "no", "cues": cues}
 
     return {"should_flag": "yes" if cues else "no", "cues": cues}
