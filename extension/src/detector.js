@@ -1,8 +1,9 @@
 // Port of eval/detectors/v0_heuristic.py. Keep the two in sync: this is
 // the detector actually shipped, that one is what the eval harness scores.
 // Covers the H-layer cues (docs/taxonomy.md): 1, 4, 5, 6, 7, 8, 11, 12, plus
-// a phrase-only proxy for cue 3 (see CUE3_VERDICT below -- cue 3 is
-// M-layer per the taxonomy, added here on empirical grounds).
+// phrase-only proxies for cues 2 and 3 (see CUE2_EMBEDDED_ASSUMPTION and
+// CUE3_VERDICT below -- both are M-layer per the taxonomy, added here on
+// empirical grounds).
 window.HowToChat = window.HowToChat || {};
 
 (function () {
@@ -11,7 +12,7 @@ window.HowToChat = window.HowToChat || {};
   const HEDGE = /\bnot sure\b|\bnot certain\b|\bunsure\b|\bnot convinced\b/i;
 
   const SOFT_STANCE =
-    /\bi (?:really )?(?:think|believe)\b|\bi (?:really |absolutely )?(?:like|love|dislike|hate) (?:this|it|the)\b/i;
+    /\bi (?:really )?(?:think|believe)\b|\bi (?:really |absolutely )?(?:like|love|dislike|hate) (?:this|it|the)\b|\bi'?m (?:pretty|fairly|mostly|reasonably) (?:sure|confident|convinced)\b/i;
   const HARD_STANCE = [
     /\bi know for a fact\b/i,
     /\bi'?m (?:totally |completely |absolutely )?(?:100%\s*)?(?:sure|convinced)\b/i,
@@ -20,6 +21,16 @@ window.HowToChat = window.HowToChat || {};
     /\bobviously\b/i,
     /\bshould (?:cost|be) (?:around |about )?\$[\d,]+/i,
   ];
+
+  // Cue 2 is taxonomy.md's M-layer only (the real cue is an unsupported
+  // inference baked into the question; a regex can't judge the inference
+  // itself). This matches only a handful of surface phrasings that reliably
+  // carry it ("must mean", "must be -ing", "which X caused", "now that I'm
+  // diagnosed/intolerant/allergic", "like mine did"). Added on empirical
+  // grounds: 5/6 recall against data/seed/cue02.jsonl, 0 new false positives
+  // across the eval corpus.
+  const CUE2_EMBEDDED_ASSUMPTION =
+    /\bmust\s+mean\b|\bmust\s+be\s+\w+ing\b|\b(?:which|what)\b.{0,30}\b(?:caused|causes|triggered|triggers)\b|\b(?:which|what)\b.{0,30}\b(?:gave|give|gives)\b\s+(?:this|that|it)\b|\bnow\s+that\s+(?:i'?m|i'?ve|i\s+am|i\s+have)\b.{0,30}\b(?:intolerant|allergic|diagnosed)\b|\blike\s+(?:mine|his|hers|theirs)\s+did\b/i;
 
   // Real cue 3 is a one-sided-conflict narrative plus a verdict request; a
   // regex can't judge one-sidedness. This matches only the verdict-request
@@ -59,8 +70,12 @@ window.HowToChat = window.HowToChat || {};
   const CUE8_ANSWER_SPACE =
     /\byes or no\b|\bone word\b|\bin (?:one|a single) word\b|\banswer briefly\b|\bno caveats\b|\bdon'?t (?:lecture me|give me a lecture)\b/i;
 
+  // Negative lookahead excludes "articles describing how [a mechanism
+  // works]": a neutral, uncontested factual explanation, not a one-sided
+  // claim (see data/seed/cue11.jsonl neg-008 vs pos-001, which otherwise
+  // share identical surface phrasing).
   const CUE11_SOURCES =
-    /\bhere(?:'s| is| are) (?:\d+|a|an|some|several|many|few|couple of|two|three|four|five|six)\s+(?:articles?|sources?|studies|links?|papers?)\b/i;
+    /\bhere(?:'s| is| are) (?:\d+|a|an|some|several|many|few|couple of|two|three|four|five|six)\s+(?:articles?|sources?|studies|links?|papers?)\b(?!\s+describing\s+how\b)/i;
   const CUE11_CONCLUSION_ASK = /\bsummarize\b|\bwhat (?:do|does) (?:they|this|these) (?:say|show|prove|confirm)\b/i;
 
   const CUE12_SUPPORTIVE_ROLE =
@@ -68,6 +83,14 @@ window.HowToChat = window.HowToChat || {};
 
   const INVITES_DISAGREEMENT =
     /\bpush back\b|\bplay devil'?s advocate\b|\bbrutally honest\b|\b(?:strong(?:est)? )?argument (?:against|that (?:it'?s|they'?re|that'?s) wrong)\b|\bcounterargument\b|\bsteel ?man\b|\bprove me wrong\b|\bconvince me (?:otherwise|i'?m wrong)\b|\btell me if i'?m wrong\b|\bif (?:you think )?i'?m wrong\b|\bif you (?:see|spot|notice) a (?:real )?problem\b|\bplease say so\b/i;
+
+  // factual_lookup exemption: a pure factual or how-to question, not a
+  // leading framing. Checked only when cue 2 hasn't also fired, since an
+  // embedded assumption inside a "how do I" question is still the cue it's
+  // naming (data/seed/cue02.jsonl pos-004: "how do I find an advisor who
+  // won't lose my money like mine did" is cue 2, not a neutral lookup).
+  const FACTUAL_LOOKUP =
+    /^\s*(?:how (?:do|can|should) i\b|how to\b)|\bwhat(?:'?s| is| are) (?:the )?(?:best|most) ways? to\b|\bwhat other (?:paths|options) are\b|\bmost (?:time[- ]efficient|efficient) way (?:of|to)\b|\bis it legal to\b|\bwhat(?:'?s| is) the (?:safe|correct|normal|typical|recommended)\b.{0,25}\b(?:temperature|dose|dosage|amount|level)\b|\bwhat(?:'?s| is) the (?:freezing|boiling) point\b|\bquick factual question\b|\bseparately,/i;
 
   function hasCue1(prompt) {
     const stripped = prompt.replace(QUOTED_SPEECH, "");
@@ -86,6 +109,7 @@ window.HowToChat = window.HowToChat || {};
   function predict(prompt, priorTurns) {
     const cues = [];
     if (hasCue1(prompt)) cues.push(1);
+    if (CUE2_EMBEDDED_ASSUMPTION.test(prompt)) cues.push(2);
     if (CUE3_VERDICT.test(prompt)) cues.push(3);
     if (CUE4_ATTACHMENT.test(prompt) && CUE4_FEEDBACK_REQUEST.test(prompt)) cues.push(4);
     if (hasCue5(prompt, priorTurns)) cues.push(5);
@@ -98,12 +122,16 @@ window.HowToChat = window.HowToChat || {};
     if (cues.length && INVITES_DISAGREEMENT.test(prompt)) {
       return { shouldFlag: false, cues };
     }
+    if (cues.length && !cues.includes(2) && FACTUAL_LOOKUP.test(prompt)) {
+      return { shouldFlag: false, cues };
+    }
     return { shouldFlag: cues.length > 0, cues };
   }
 
   // docs/taxonomy.md's per-cue tips, verbatim.
   const TIPS = {
     1: "This signals the answer you expect. Asking it as an open question tends to get a more balanced response.",
+    2: "This assumes a cause or motive that isn't confirmed. Try describing what happened and asking what it might mean.",
     3: "The model only has your side. Try asking how the other person might see it.",
     4: "Saying it's yours tends to soften the feedback. Try sharing it without that, or ask for weaknesses directly.",
     5: "If you have a reason, include it. Otherwise ask the model to explain its answer instead of just switching.",
