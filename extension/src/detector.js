@@ -30,7 +30,7 @@ window.HowToChat = window.HowToChat || {};
   // grounds: 5/6 recall against data/seed/cue02.jsonl, 0 new false positives
   // across the eval corpus.
   const CUE2_EMBEDDED_ASSUMPTION =
-    /\bmust\s+mean\b|\bmust\s+be\s+\w+ing\b|\b(?:which|what)\s+\w+\s+(?:caused|causes|triggered)\b|\bnow\s+that\s+(?:i'?m|i'?ve|i\s+am|i\s+have)\b.{0,30}\b(?:intolerant|allergic|diagnosed)\b|\blike\s+(?:mine|his|hers|theirs)\s+did\b/i;
+    /\bmust\s+mean\b|\bmust\s+be\s+\w+ing\b|\b(?:which|what)\b.{0,30}\b(?:caused|causes|triggered|triggers)\b|\b(?:which|what)\b.{0,30}\b(?:gave|give|gives)\b\s+(?:this|that|it)\b|\bnow\s+that\s+(?:i'?m|i'?ve|i\s+am|i\s+have)\b.{0,30}\b(?:intolerant|allergic|diagnosed)\b|\blike\s+(?:mine|his|hers|theirs)\s+did\b/i;
 
   // Real cue 3 is a one-sided-conflict narrative plus a verdict request; a
   // regex can't judge one-sidedness. This matches only the verdict-request

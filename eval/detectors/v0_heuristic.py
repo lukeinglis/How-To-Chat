@@ -57,7 +57,8 @@ HARD_STANCE = [
 CUE2_EMBEDDED_ASSUMPTION = re.compile(
     r"\bmust\s+mean\b|"
     r"\bmust\s+be\s+\w+ing\b|"
-    r"\b(?:which|what)\s+\w+\s+(?:caused|causes|triggered)\b|"
+    r"\b(?:which|what)\b.{0,30}\b(?:caused|causes|triggered|triggers)\b|"
+    r"\b(?:which|what)\b.{0,30}\b(?:gave|give|gives)\b\s+(?:this|that|it)\b|"
     r"\bnow\s+that\s+(?:i'?m|i'?ve|i\s+am|i\s+have)\b.{0,30}\b(?:intolerant|allergic|diagnosed)\b|"
     r"\blike\s+(?:mine|his|hers|theirs)\s+did\b",
     re.I,
