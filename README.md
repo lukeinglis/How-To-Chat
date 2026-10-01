@@ -44,7 +44,7 @@ A content script watches the chat editor for input (debounced, since ChatGPT's e
 
 Both are regex and keyword heuristics today, no model call, no network request. If either fires, an overlay renders a badge and popover in an isolated shadow root, so the extension never touches the page's own DOM beyond one host element and the site's CSS can't bleed into it or vice versa.
 
-**What v0 does not do yet.** The heuristics catch phrasing patterns but don't yet reason about whether the flagged cue is actually load-bearing for the question being asked (tracked in [issue #2](../../issues/2)), and cue 2 has no detector yet ([issue #3](../../issues/3)). The extension itself only runs on chatgpt.com; Claude and Gemini support is planned but not built. Precision is the priority over recall here, a false flag costs more than a missed one, since over-flagging is what gets an extension uninstalled.
+**What v0 does not do yet.** The heuristics catch phrasing patterns but don't yet reason about whether the flagged cue is actually load-bearing for the question being asked (tracked in [issue #2](../../issues/2)). The extension itself only runs on chatgpt.com; Claude and Gemini support is planned but not built. Precision is the priority over recall here, a false flag costs more than a missed one, since over-flagging is what gets an extension uninstalled.
 
 ## Installing it locally
 
