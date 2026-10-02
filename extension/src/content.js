@@ -32,13 +32,24 @@
     );
   }
 
+  // Cue 5 (detector.js hasCue5) only checks whether there's a prior turn at
+  // all, never its content, so a DOM node count is enough -- no need to read
+  // or store message text.
+  function getPriorTurns() {
+    for (const selector of siteConfig.turnSelectors || []) {
+      const nodes = document.querySelectorAll(selector);
+      if (nodes.length) return Array.from(nodes);
+    }
+    return [];
+  }
+
   // Safety flags take priority: they're higher-stakes (docs/safety.md) and
   // their tips lead the popover, with framing-cue tips following.
   function evaluate(text) {
     const safetyResult = HowToChat.safetyDetector.predict(text);
     const safetyTips = HowToChat.safetyDetector.tipsFor(safetyResult);
 
-    const cueResult = HowToChat.detector.predict(text, []);
+    const cueResult = HowToChat.detector.predict(text, getPriorTurns());
     const cueTips = cueResult.cues.map((cue) => HowToChat.detector.tips[cue]).filter(Boolean);
 
     const tips = safetyTips.concat(cueTips);
