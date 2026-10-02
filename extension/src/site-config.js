@@ -11,12 +11,13 @@ HowToChat.siteConfigs = {
     ],
     // Used only to tell "fresh chat" from "there's at least one prior
     // exchange" (cue 5's only use of prior turns, see detector.js hasCue5).
-    // Content isn't read, so a coarse selector is fine; candidates tried in
-    // order, first match wins.
-    turnSelectors: [
-      "[data-message-author-role]",
-      "article[data-testid^='conversation-turn-']",
-    ],
+    // Content isn't read, so a coarse selector is fine. Verified against
+    // live chatgpt.com markup -- data-message-author-role and
+    // article[data-testid^='conversation-turn-'] don't exist there.
+    // ChatGPT also leaves the previous conversation's bubbles in the DOM
+    // (hidden) when you start a new chat, so a raw node count isn't enough;
+    // content.js filters to visible nodes only.
+    turnSelectors: ["[data-user-message-bubble]"],
   },
 };
 
