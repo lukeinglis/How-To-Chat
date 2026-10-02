@@ -34,11 +34,15 @@
 
   // Cue 5 (detector.js hasCue5) only checks whether there's a prior turn at
   // all, never its content, so a DOM node count is enough -- no need to read
-  // or store message text.
+  // or store message text. Visibility filter matters: ChatGPT leaves the
+  // previous conversation's message nodes in the DOM (hidden) when you
+  // start a new chat, so an unfiltered count is nonzero even in a fresh one.
   function getPriorTurns() {
     for (const selector of siteConfig.turnSelectors || []) {
-      const nodes = document.querySelectorAll(selector);
-      if (nodes.length) return Array.from(nodes);
+      const nodes = Array.from(document.querySelectorAll(selector)).filter(
+        (el) => el.offsetParent !== null
+      );
+      if (nodes.length) return nodes;
     }
     return [];
   }
