@@ -31,6 +31,14 @@ The extension also has a narrower, experimental check for scam narratives relaye
 
 A Chrome extension for chatgpt.com. It watches the chat input as you type, runs two independent checks against the text, and shows a small badge near the input box if something's worth a second look. Click the badge for a one-line tip. It never edits your prompt and never blocks sending, a flag is information, not a gate.
 
+## See it in action
+
+| | |
+|---|---|
+| ![Leading medical question gets an amber badge](media/demo/p1-speed.gif) | A leading medical question gets an amber badge: cue 1, asserting a stance as settled fact. |
+| ![Pushback without a new reason gets flagged](media/demo/p2-speed.gif) | Pushing back on an honest answer without a new reason gets flagged too: cue 5, tracked across the conversation. |
+| ![Scam narrative gets a red safety badge](media/demo/p3-speed.gif) | A grandparent scam narrative gets a red safety badge, which takes priority over framing cues. |
+
 ## What it's looking for
 
 Two separate things, checked independently:
@@ -80,6 +88,7 @@ Not published to the Chrome Web Store yet. To load it unpacked for local testing
 | `scripts/` | Fetch and adapter scripts |
 | `eval/` | Eval harness and results |
 | `extension/` | Chrome extension |
+| `media/demo/` | Recorded demo clips (full + speed) and the GIFs used above |
 
 ## Getting the external data
 
