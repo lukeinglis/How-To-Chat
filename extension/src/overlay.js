@@ -110,8 +110,15 @@ window.HowToChat = window.HowToChat || {};
       this.badge.style.top = `${badgeTop}px`;
       this.badge.style.left = `${badgeLeft}px`;
       if (this.popoverOpen) {
-        this.popover.style.top = `${badgeTop + 26}px`;
         this.popover.style.left = `${Math.max(8, badgeLeft - 258)}px`;
+        // Flip above the badge when there isn't room below (e.g. the
+        // compose box sits near the bottom of the viewport), rather than
+        // letting a popover with more tips run off-screen.
+        const below = badgeTop + 26;
+        const popoverHeight = this.popover.getBoundingClientRect().height;
+        const fitsBelow = below + popoverHeight <= window.innerHeight - 8;
+        const top = fitsBelow ? below : Math.max(8, rect.top - popoverHeight - 8);
+        this.popover.style.top = `${top}px`;
       }
     }
 
