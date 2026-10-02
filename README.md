@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="extension/icons/icon-128.png" alt="How-To-Chat logo" width="96">
+</p>
+
 # How-To-Chat
 
 A Chrome extension that reads your prompt before you send it and tells you, in plain language, when the answer you're about to get might be less honest or less safe than you think.
@@ -46,7 +50,7 @@ A content script watches the chat editor for input (debounced, since ChatGPT's e
 
 Both are regex and keyword heuristics today, no model call, no network request. If either fires, an overlay renders a badge and popover in an isolated shadow root, so the extension never touches the page's own DOM beyond one host element and the site's CSS can't bleed into it or vice versa.
 
-**What v0 does not do yet.** The heuristics catch phrasing patterns but don't yet reason about whether the flagged cue is actually load-bearing for the question being asked (tracked in [issue #2](../../issues/2)). The extension itself only runs on chatgpt.com; Claude and Gemini support is planned but not built. Precision is the priority over recall here, a false flag costs more than a missed one, since over-flagging is what gets an extension uninstalled.
+**What v0 does not do yet.** The heuristics catch phrasing patterns but don't yet reason about whether the flagged cue is actually load-bearing for the question being asked (tracked in [issue #2](../../issues/2)). The extension itself only runs on chatgpt.com; Claude and Gemini support is planned but not built ([issue #20](../../issues/20), [issue #21](../../issues/21)). Precision is the priority over recall here, a false flag costs more than a missed one, since over-flagging is what gets an extension uninstalled.
 
 ## Installing it locally
 
@@ -67,6 +71,7 @@ Not published to the Chrome Web Store yet. To load it unpacked for local testing
 | `docs/safety.md` | The stakes and scam-narrative safety flags, the safety rule |
 | `docs/architecture.md` | Extension design and the reasoning behind it |
 | `docs/decisions.md` | Dated decision log |
+| `docs/demo-script.md` | Demo video shot list, prompts, and captions |
 | `data/schema.json` | Eval record format for the 12 framing cues |
 | `data/schema_safety.json` | Eval record format for the safety flags |
 | `data/sources.md` | External datasets, what each covers, how to fetch |
