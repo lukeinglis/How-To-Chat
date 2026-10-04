@@ -10,12 +10,14 @@ It runs entirely in your browser. Nothing you type is sent anywhere else.
 
 ## Why this matters
 
+If a friend or family member has ever told you "ChatGPT said this" or "ChatGPT agreed with me," you've probably learned to ask the follow-up: what did you actually ask it, and how did you phrase it? How you ask shapes what you get back, and most people have no reason to know that.
+
 People ask ChatGPT for medical, financial, and relationship advice and trust the answer like it came from a professional who knows them. Two things make that risky:
 
 1. **The model tends to agree with you.** Research on LLM sycophancy shows phrasing alone changes how much a model agrees, independent of whether you're right. "I'm sure X is true" gets confirmed more often than "is X true?", a pattern across models, not a bug in one.
 2. **Some questions carry real stakes no matter how they're asked.** "Can I take an extra dose if I forgot this morning's?" is dangerous to get wrong regardless of phrasing.
 
-Nobody is looking over your shoulder at 11pm when you're asking about a prescription or a retirement account. This extension is that second opinion: the "wait, what did you actually ask it" check, automatic, before you hit send.
+Most people don't have someone looking over their shoulder when they're chatting with an AI at 11pm about their prescription or their retirement account, and asking them about it afterward is too late. This extension is built to be that voice for them: the "wait, what did you actually ask it" question, asked automatically, before they hit send.
 
 ## The dangers it's trying to catch
 
