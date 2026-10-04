@@ -3,10 +3,10 @@
 Chrome extension that flags prompts framed to get an agreeable answer from an LLM. The target users are non-technical people using ChatGPT, Claude, and Gemini. Read `README.md` for the overview.
 
 ## Read before working
-- `docs/taxonomy.md`: the 12 framing cues and **the flag rule**. Every labeling decision on cues 1-12 goes through the flag rule.
+- `docs/taxonomy.md`: the 11 framing cues and **the flag rule**. Every labeling decision on cues 1-11 goes through the flag rule.
 - `docs/safety.md`: the stakes and scam-narrative safety flags and **the safety rule**. Separate from the framing cues; doesn't use the same rule or exemptions.
 - `docs/decisions.md`: settled decisions. Don't reopen one without new evidence. To change one, add a superseding entry; never edit old rows.
-- `data/schema.json`: eval record format for the 12 framing cues. Validate every `data/seed/*.jsonl` file against it.
+- `data/schema.json`: eval record format for the 11 framing cues. Validate every `data/seed/*.jsonl` file against it.
 - `data/schema_safety.json`: eval record format for the safety flags. Validate every `data/seed/safety/*.jsonl` file against it.
 
 ## Hard constraints
@@ -31,14 +31,14 @@ Chrome extension that flags prompts framed to get an agreeable answer from an LL
 
 ## Roadmap
 1. Adapters: convert Sharma, ELEPHANT, Phare, Perez into the schema (`scripts/`). Tag each record with its source.
-2. Sample and relabel external data against the flag rule; hand-write the gaps (cues 2, 6-12, exemption negatives).
+2. Sample and relabel external data against the flag rule; hand-write the gaps (cues 2, 6-11, exemption negatives).
 3. Eval harness (`eval/`): precision/recall on the flag decision, per cue, and false positives per exemption. Borderline excluded from headline metrics.
-4. Heuristic detector (v0) for cues 1, 4, 5, 6, 7, 8, 11, 12.
+4. Heuristic detector (v0) for cues 1, 4, 5, 6, 7, 8, 11.
 5. Extension shell on chatgpt.com: input watcher, detector, badge.
 6. Fine-tuned small classifier (v1), trained on generated data, never on external eval data.
 7. Impact eval: do flagged prompts actually get more agreeable answers from current models?
 8. Safety flags (`docs/safety.md`): hand-write seed data for scam-narrative, then stakes; extend `eval/run_eval.py` to report them alongside the framing cues; heuristic detection, then extension wiring.
-9. Relationships tip-copy change for cues 3, 9, 12 when `domain: "relationships"`, naming the over-trust failure mode.
+9. Relationships tip-copy change for cues 3, 9 when `domain: "relationships"`, naming the over-trust failure mode.
 
 ## Open items
 - Read SyPS (arXiv 2608.23837) effect sizes to firm up cue 7.

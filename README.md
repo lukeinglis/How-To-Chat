@@ -19,7 +19,7 @@ Nobody is looking over your shoulder at 11pm when you're asking about a prescrip
 
 ## The dangers it's trying to catch
 
-**The main one: a leading question.** How you ask shapes the answer you get. "I think my son's ADHD meds are doing more harm than good, what are the signs they aren't working?" invites a one-sided answer. "Be my hype man and tell me quitting my job to stream full-time is a great plan" assigns the model a role that can't push back. None of these are lies, they just make agreement the path of least resistance, and that's the pattern this extension catches.
+**The main one: a leading question.** How you ask shapes the answer you get. "I think my son's ADHD meds are doing more harm than good, what are the signs they aren't working?" invites a one-sided answer. "I'm 100% sure my Civic just needs a new battery, not an alternator, confirm that's it" pressures a confirmation instead of a real diagnosis. None of these are lies, they just make agreement the path of least resistance, and that's the pattern this extension catches.
 
 **A narrower case: high-stakes, hard-to-undo actions.** A few specific actions get flagged regardless of phrasing, because a wrong answer is expensive to undo: medication dosing, money transfers, signing a legal or financial document. Mention that a doctor, pharmacist, banker, or lawyer already reviewed the specific action, and the extension backs off.
 
@@ -47,7 +47,7 @@ A grandparent scam narrative gets a red safety badge, which takes priority over 
 
 Two separate things, checked independently:
 
-**Framing cues (the main mechanism).** How you're asking, not what you're asking about. Twelve patterns, drawn from sycophancy research, where the way a prompt is phrased tends to pull the model toward agreement instead of an honest read: asserting a stance as settled fact, appealing to what "everyone knows" or what an authority already said, assigning the model a supportive role ("be my hype man"), presenting only one side of a story, and others documented in [`docs/taxonomy.md`](docs/taxonomy.md).
+**Framing cues (the main mechanism).** How you're asking, not what you're asking about. Eleven patterns, drawn from sycophancy research, where the way a prompt is phrased tends to pull the model toward agreement instead of an honest read: asserting a stance as settled fact, appealing to what "everyone knows" or what an authority already said, presenting only one side of a story, and others documented in [`docs/taxonomy.md`](docs/taxonomy.md).
 
 **Safety flags (a narrower add-on).** A small, separate set of checks on what the prompt involves rather than how it's phrased: a **stakes** flag for medication dosing, money transfers, and legal signing, and an experimental **scam narrative** flag for third-party stories with signs of fraud (urgency, secrecy, an unusual payment channel, an unfamiliar relative or authority). Documented in [`docs/safety.md`](docs/safety.md); scope and future here are still under discussion.
 
@@ -57,7 +57,7 @@ Safety flags get a red badge instead of amber and take priority when both fire.
 
 A content script watches the chat editor for input (debounced, since ChatGPT's editor doesn't fire normal input events on every change) and re-attaches automatically if the page swaps the editor out from under it. On each change, two detectors run against the current text:
 
-- `detector.js` checks the 12 framing cues
+- `detector.js` checks the 11 framing cues
 - `safety-detector.js` checks the stakes and scam-narrative flags
 
 Both are regex and keyword heuristics today, no model call, no network request. If either fires, an overlay renders a badge and popover in an isolated shadow root, so the extension never touches the page's own DOM beyond one host element and the site's CSS can't bleed into it or vice versa.
@@ -79,12 +79,12 @@ Not published to the Chrome Web Store yet. To load it unpacked for local testing
 | Path | Contents |
 |---|---|
 | `docs/research.md` | Papers, key findings, caveats |
-| `docs/taxonomy.md` | The 12 framing cues, the flag rule, exemptions, user-facing tips |
+| `docs/taxonomy.md` | The 11 framing cues, the flag rule, exemptions, user-facing tips |
 | `docs/safety.md` | The stakes and scam-narrative safety flags, the safety rule |
 | `docs/architecture.md` | Extension design and the reasoning behind it |
 | `docs/decisions.md` | Dated decision log |
 | `docs/demo-script.md` | Demo video shot list, prompts, and captions |
-| `data/schema.json` | Eval record format for the 12 framing cues |
+| `data/schema.json` | Eval record format for the 11 framing cues |
 | `data/schema_safety.json` | Eval record format for the safety flags |
 | `data/sources.md` | External datasets, what each covers, how to fetch |
 | `data/seed/` | Hand-written, reviewed eval examples |

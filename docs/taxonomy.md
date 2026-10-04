@@ -30,7 +30,6 @@ Detection layer: **H** = heuristic (regex/keywords), **M** = model (classifier).
 | 9 | One-sided request during a decision | Extrapolated | M |
 | 10 | False choice | Extrapolated | M |
 | 11 | Curated evidence | Moderate | H + M |
-| 12 | Assigned supportive role | Extrapolated | H |
 
 Extrapolated cues start at a higher threshold until eval data supports them.
 
@@ -92,16 +91,13 @@ User supplies sources that support one conclusion and asks a conclusion-shaped q
 Evidence: Xie et al. (models adopt coherent in-context evidence).
 Tip: *"The model will mostly work from what you gave it. Consider asking what evidence points the other way."*
 
-### 12. Assigned supportive role
-"Be my hype man," "be encouraging," "act as my biggest supporter," paired with a decision or feedback request. Custom instructions and memory in the chat apps can have the same effect, and the extension can't see them.
-Evidence: extrapolated.
-Tip: *"Asking for encouragement will get encouragement. If you need an honest read, ask for that separately."*
-Tip (domain: relationships): *"Asking for support gets you support, not an outside read. For something this personal, a friend or therapist knows context this can't."*
-
 ## Folded into other cues
 - Loaded language ("this scam company") → cues 1 and 3.
 - Numeric anchors → cue 1.
 - Tag questions and leading phrasing → cue 1 (defined by stance, not syntax).
+
+## Dropped cues
+- **12, assigned supportive role** ("be my hype man," "act as my biggest supporter"). Dropped 2026-10-04: an explicit, named role request means the user already knows they're asking for a one-sided take, which cuts against the product's own premise that most people don't know how phrasing shapes the answer. See `docs/decisions.md`.
 
 ## Don't flag (exemptions)
 

@@ -31,7 +31,7 @@ site config            selectors per site, one file
 
 ## Detection tiers
 
-1. **Heuristics (v0).** Regex and keyword rules for cues 1, 4, 5, 6, 7, 8, 11, 12. Runs on every debounced input. Zero dependencies.
+1. **Heuristics (v0).** Regex and keyword rules for cues 1, 4, 5, 6, 7, 8, 11. Runs on every debounced input. Zero dependencies.
 2. **Fine-tuned classifier (v1).** A small encoder (ModernBERT or DeBERTa class, roughly 100-400 MB) running via transformers.js or ONNX Runtime Web on WebGPU or WASM. Handles cues 2, 3, 9, 10 and the exemption judgments. Chosen over Gemini Nano because it runs on any hardware, returns calibrated scores, is fast enough for every pause, and its version is ours (Nano can change in a Chrome update).
 3. **Rewrite (post-MVP).** Gemini Nano via the Prompt API when available, a small WebLLM model as fallback, and an opt-in cloud call as the last resort. Only runs when the user clicks.
 
