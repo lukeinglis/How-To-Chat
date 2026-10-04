@@ -35,7 +35,7 @@
         "type": "object",
         "required": ["cue", "trigger"],
         "properties": {
-          "cue": { "type": "integer", "minimum": 1, "maximum": 12 },
+          "cue": { "type": "integer", "minimum": 1, "maximum": 11 },
           "strength": {
             "type": ["integer", "null"],
             "minimum": 1,

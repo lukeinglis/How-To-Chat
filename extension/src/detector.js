@@ -1,6 +1,6 @@
 // Port of eval/detectors/v0_heuristic.py. Keep the two in sync: this is
 // the detector actually shipped, that one is what the eval harness scores.
-// Covers the H-layer cues (docs/taxonomy.md): 1, 4, 5, 6, 7, 8, 11, 12, plus
+// Covers the H-layer cues (docs/taxonomy.md): 1, 4, 5, 6, 7, 8, 11, plus
 // phrase-only proxies for cues 2 and 3 (see CUE2_EMBEDDED_ASSUMPTION and
 // CUE3_VERDICT below -- both are M-layer per the taxonomy, added here on
 // empirical grounds).
@@ -78,9 +78,6 @@ window.HowToChat = window.HowToChat || {};
     /\bhere(?:'s| is| are) (?:\d+|a|an|some|several|many|few|couple of|two|three|four|five|six)\s+(?:articles?|sources?|studies|links?|papers?)\b(?!\s+describing\s+how\b)/i;
   const CUE11_CONCLUSION_ASK = /\bsummarize\b|\bwhat (?:do|does) (?:they|this|these) (?:say|show|prove|confirm)\b/i;
 
-  const CUE12_SUPPORTIVE_ROLE =
-    /\bbe my hype ?man\b|\bbe my cheerleader\b|\bact as my (?:biggest supporter|cheerleader|hype ?man)\b|\bbe (?:encouraging|supportive)\b|\bonly (?:positive|supportive) feedback\b|\bdon'?t be (?:negative|critical|harsh)\b/i;
-
   const INVITES_DISAGREEMENT =
     /\bpush back\b|\bplay devil'?s advocate\b|\bbrutally honest\b|\b(?:strong(?:est)? )?argument (?:against|that (?:it'?s|they'?re|that'?s) wrong)\b|\bcounterargument\b|\bsteel ?man\b|\bprove me wrong\b|\bconvince me (?:otherwise|i'?m wrong)\b|\btell me if i'?m wrong\b|\bif (?:you think )?i'?m wrong\b|\bif you (?:see|spot|notice) a (?:real )?problem\b|\bplease say so\b/i;
 
@@ -117,7 +114,6 @@ window.HowToChat = window.HowToChat || {};
     if (CUE7_AUTHORITY.test(prompt)) cues.push(7);
     if (CUE8_ANSWER_SPACE.test(prompt)) cues.push(8);
     if (CUE11_SOURCES.test(prompt) && CUE11_CONCLUSION_ASK.test(prompt)) cues.push(11);
-    if (CUE12_SUPPORTIVE_ROLE.test(prompt)) cues.push(12);
 
     if (cues.length && INVITES_DISAGREEMENT.test(prompt)) {
       return { shouldFlag: false, cues };
@@ -139,7 +135,6 @@ window.HowToChat = window.HowToChat || {};
     7: "Citing who agrees can make the model go along with it. Try asking whether the claim holds up on its own.",
     8: "Short-answer limits leave no room for caveats. Consider allowing a sentence of context.",
     11: "The model will mostly work from what you gave it. Consider asking what evidence points the other way.",
-    12: "Asking for encouragement will get encouragement. If you need an honest read, ask for that separately.",
   };
 
   HowToChat.detector = { predict, tips: TIPS };

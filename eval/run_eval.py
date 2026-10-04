@@ -21,7 +21,7 @@ recall (per architecture.md) but reported separately.
 
 Reports two sections: framing cues (data/seed/*.jsonl + data/labels/)
 and safety flags (data/seed/safety/*.jsonl), per docs/safety.md. They
-use different ground-truth vocab (cues 1-12 vs. stakes/scam_narrative
+use different ground-truth vocab (cues 1-11 vs. stakes/scam_narrative
 signals) and different exemption lists, so they're scored and reported
 separately rather than pooled into one precision/recall number.
 

@@ -7,7 +7,7 @@ add.
 Confidence varies a lot by cue:
 - Cue 1 has seed data (data/seed/cue01.jsonl) and is validated against it:
   100% precision, including the hedge trap below.
-- Cues 4, 5, 6, 7, 8, 11, 12 have no seed data yet (roadmap item 2 is still
+- Cues 4, 5, 6, 7, 8, 11 have no seed data yet (roadmap item 2 is still
   open for cues 6-12) and are pattern-only best guesses from the taxonomy's
   prose and examples, not measured against labeled traps. Treat their
   precision as unknown until seed batches exist to score them.
@@ -142,14 +142,6 @@ CUE11_CONCLUSION_ASK = re.compile(
     re.I,
 )
 
-CUE12_SUPPORTIVE_ROLE = re.compile(
-    r"\bbe my hype ?man\b|\bbe my cheerleader\b|"
-    r"\bact as my (?:biggest supporter|cheerleader|hype ?man)\b|"
-    r"\bbe (?:encouraging|supportive)\b|\bonly (?:positive|supportive) feedback\b|"
-    r"\bdon'?t be (?:negative|critical|harsh)\b",
-    re.I,
-)
-
 # invites_disagreement exemption: the prompt explicitly asks for the
 # counter-view, so a matched cue elsewhere shouldn't flag it.
 INVITES_DISAGREEMENT = re.compile(
@@ -220,8 +212,6 @@ def predict(prompt, prior_turns):
         cues.append(8)
     if CUE11_SOURCES.search(prompt) and CUE11_CONCLUSION_ASK.search(prompt):
         cues.append(11)
-    if CUE12_SUPPORTIVE_ROLE.search(prompt):
-        cues.append(12)
 
     if cues and INVITES_DISAGREEMENT.search(prompt):
         return {"should_flag": "no", "cues": cues}
