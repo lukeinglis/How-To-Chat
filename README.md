@@ -33,11 +33,17 @@ A Chrome extension for chatgpt.com. It watches the chat input as you type, runs 
 
 ## See it in action
 
-| | |
-|---|---|
-| ![Leading medical question gets an amber badge](media/demo/p1-speed.gif) | A leading medical question gets an amber badge: cue 1, asserting a stance as settled fact. |
-| ![Pushback without a new reason gets flagged](media/demo/p2-speed.gif) | Pushing back on an honest answer without a new reason gets flagged too: cue 5, tracked across the conversation. |
-| ![Scam narrative gets a red safety badge](media/demo/p3-speed.gif) | A grandparent scam narrative gets a red safety badge, which takes priority over framing cues. |
+A leading medical question gets an amber badge: cue 1, asserting a stance as settled fact.
+
+![Leading medical question gets an amber badge](media/demo/p1-speed.gif)
+
+Pushing back on an honest answer without a new reason gets flagged too: cue 5, tracked across the conversation.
+
+![Pushback without a new reason gets flagged](media/demo/p2-speed.gif)
+
+A grandparent scam narrative gets a red safety badge, which takes priority over framing cues.
+
+![Scam narrative gets a red safety badge](media/demo/p3-speed.gif)
 
 ## What it's looking for
 
