@@ -17,6 +17,8 @@ None. How-To-Chat does not collect, store, or transmit any data, anywhere.
 
 The extension reads the text in the chatgpt.com chat input box as you type, so it can check it against a small set of phrasing patterns on your device. That text is processed entirely in memory, inside your browser, and discarded immediately after each check. It is never sent anywhere, including to the extension's own developer.
 
+It also checks whether the page contains any earlier messages in the current chat, to tell a fresh conversation from an ongoing one. This only checks whether those messages exist and are visible, not what they say; their content is never read.
+
 ## Permissions
 
 The extension only runs on `chatgpt.com`. It requests no permissions beyond the ability to read and display content on that page, which it needs to watch the chat input and show a badge next to it. It never modifies what you type and never blocks you from sending a message.
