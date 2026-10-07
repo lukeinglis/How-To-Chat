@@ -13,6 +13,7 @@ Chrome extension that flags prompts framed to get an agreeable answer from an LL
 - The extension never writes to the chat editor, never blocks sending, and makes no network calls.
 - UI renders in a shadow root. Per-site selectors live in one config file.
 - Precision first: at least 90% precision on the flag decision before raising recall.
+- `extension/src/detector.js` and `eval/detectors/v0_heuristic.py` must stay behaviorally identical (same for the safety pair). After touching either, run `python3 scripts/check_parity.py`. The harness only measures the Python copy, so the precision number describes the shipped extension only while they agree.
 - External datasets (`data/external/`, including `data/external/converted/`) are for evaluation only. Never train on them, never commit them, never copy their rows into `data/seed/`.
 
 ## Data rules
