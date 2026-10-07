@@ -31,15 +31,25 @@ Chrome extension that flags prompts framed to get an agreeable answer from an LL
 - Writing: no em dashes, direct prose, specific numbers, don't oversell.
 
 ## Roadmap
-1. Adapters: convert Sharma, ELEPHANT, Phare, Perez into the schema (`scripts/`). Tag each record with its source.
-2. Sample and relabel external data against the flag rule; hand-write the gaps (cues 2, 6-11, exemption negatives).
-3. Eval harness (`eval/`): precision/recall on the flag decision, per cue, and false positives per exemption. Borderline excluded from headline metrics.
-4. Heuristic detector (v0) for cues 1, 4, 5, 6, 7, 8, 11.
-5. Extension shell on chatgpt.com: input watcher, detector, badge.
-6. Fine-tuned small classifier (v1), trained on generated data, never on external eval data.
-7. Impact eval: do flagged prompts actually get more agreeable answers from current models?
-8. Safety flags (`docs/safety.md`): hand-write seed data for scam-narrative, then stakes; extend `eval/run_eval.py` to report them alongside the framing cues; heuristic detection, then extension wiring.
-9. Relationships tip-copy change for cues 3, 9 when `domain: "relationships"`, naming the over-trust failure mode.
+
+Built:
+- Adapters for Sharma, ELEPHANT, Phare, and Perez (`scripts/adapters/`), each record tagged with its source.
+- External data sampled and relabeled against the flag rule (`data/labels/`), with the gaps hand-written into `data/seed/` (cues 2, 6-11, exemption negatives).
+- Eval harness (`eval/run_eval.py`): precision/recall on the flag decision, per-cue recall, and false positives per exemption, with borderline records excluded from the headline metrics.
+- Heuristic detector v0 (`eval/detectors/v0_heuristic.py`). It covers cues 1-8 and 11, wider than the cues 1, 4, 5, 6, 7, 8, 11 originally planned, though cues 2 and 3 are phrase-only proxies. Cues 9 and 10 have no detection at all (0% recall on 7 and 6 records).
+- Extension on chatgpt.com: input watcher, detector, badge (`extension/src/`), plus Chrome Web Store submission assets in `media/store/` and `docs/store-listing.md`.
+- Safety flags (`docs/safety.md`) end to end: seed data in `data/seed/safety/`, a separate section in `eval/run_eval.py`, `eval/detectors/v0_heuristic_safety.py`, and `extension/src/safety-detector.js` wired into the extension. Only the seed data is still short; see Next item 1.
+
+Measured state, from `python3 eval/run_eval.py --detector v0_heuristic`: 90.6% precision (404 tp, 42 fp) and 76.8% recall over 782 scored records. The safety detector reports 100% precision and 100% recall, but over only the 25 hand-written records its rules were derived from, so that figure measures fit to those examples and says nothing about generalization.
+
+Next, in order, with detector hardening ahead of any new surface or model work (`docs/decisions.md`, 2026-10-07):
+1. Grow `data/seed/safety/` past 25 records so the safety numbers carry information. The extension already ships a red safety badge on that 100% figure.
+2. Raise cue 1 recall, at 60.9% with 75 of 192 records missed. That is the largest single recall gap and the main drag on the 76.8% headline. Run `python3 scripts/check_parity.py` after touching either detector copy.
+3. Fine-tuned small classifier (v1), trained on generated data, never on external eval data.
+4. Impact eval: do flagged prompts actually get more agreeable answers from current models?
+5. Relationships tip-copy change for cues 3, 9 when `domain: "relationships"`, naming the over-trust failure mode.
+
+Surfaces beyond chatgpt.com are gated behind that hardening: the Claude and Gemini sites first, then a Safari web extension on macOS and iOS/iPadOS. Safari stays a local unsigned build with no Apple Developer Program purchase until the detector is defensible, and no other Apple surface is on the table (`docs/decisions.md`, 2026-10-07).
 
 ## Open items
 - Read SyPS (arXiv 2608.23837) effect sizes to firm up cue 7.
