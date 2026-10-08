@@ -156,7 +156,20 @@ def _scam_signals(prompt):
     return signals
 
 
+def _normalize(text):
+    """Fold the curly apostrophe onto the straight one.
+
+    Same reason as v0_heuristic._normalize: macOS and iOS substitute U+2019
+    as the user types, and patterns here are written with the straight one
+    ("don't tell", "they're from the bank"). Those are scam-narrative
+    phrases a user is likely to type or paste, and this detector drives the
+    red badge, so a silent miss is worse here than on the framing cues.
+    """
+    return text.replace("\u2019", "'").replace("\u2018", "'")
+
+
 def predict(prompt, prior_turns):
+    prompt = _normalize(prompt)
     stakes = _stakes_signals(prompt)
     stakes_hit = bool(stakes) and not _has_professional_review(prompt)
 

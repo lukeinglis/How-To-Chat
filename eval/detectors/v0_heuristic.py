@@ -8,40 +8,29 @@ Confidence varies a lot by cue:
 - Cue 1 has seed data (data/seed/cue01.jsonl) and is validated against it:
   100% precision on that file, including the hedge trap below. Corpus-wide
   it is 86.6% precision (285 of 329 firings) and 85.4% recall (164/192).
-  Disabling it drops corpus false positives from 42 to 6, so it owns 36 of
-  the 42 on its own, and it is still the dominant precision problem. The
+  Disabling it drops corpus false positives from 40 to 4, so it owns 36 of
+  the 40 on its own, and it is still the dominant precision problem. The
   stance verbs in SOFT_STANCE and the rhetorical forms in HARD_STANCE took
   its recall from 60.9% to 85.4% while adding no false positives at all, so
   the 44 bad firings it had before are the same 44 it has now: that work
   raised recall and left precision exactly where it was.
-- Cues 4, 5, 6, 7, 8, 11 all have seed data now and are scored; run the
+- Cue 7 is 76.9% precision (10/13) and 55.6% recall (10/18), up from 54.5%
+  and 33.3%. Read its numbers with care: every one of its true positives
+  is a hand-written seed record, and there are no external ones, so any
+  fix keyed on surface shape (the authority phrase sitting at the start of
+  a short prompt, say) would be fitting the seed templates rather than the
+  cue. The guard on "everyone knows" and the generalization of "my doctor
+  said" below both turn on what the phrase is doing in the sentence, which
+  is why they were acceptable on that evidence. It now owns 1 corpus false
+  positive, down from 3.
+- Cues 4, 5, 6, 8, 11 all have seed data now and are scored; run the
   harness for the current per-cue recall table. Cues 6, 8, and 11 reach
-  100% recall. Cues 4 and 7 sit near a third (8/26 and 6/18). Cue 5 is the
-  weakest at 14.3% recall (2/14), and its precision is 40.0%: it fires on
-  only 5 approved scored records, 2 of them should_flag=yes. That rate is
-  the worst of any implemented cue, but the volume is low, and 2 of its 3
+  100% recall. Cue 4 sits near a third (8/26). Cue 5 is the weakest at
+  14.3% recall (2/14), and its precision is 40.0%: it fires on only 5
+  approved scored records, 2 of them should_flag=yes. That rate is the
+  worst of any implemented cue, but the volume is low, and 2 of its 3
   false positives are flagged by another cue anyway, so cue 5 owns just 1
-  of the corpus's 42 false positives.
-
-Per-cue precision, which matters because the 90% bar is a precision bar:
-cue 3 100.0% (171/171), cue 2 100.0% (8/8), cue 6 97.7% (86/88), cue 1
-86.6% (285/329), cue 11 85.7% (6/7), cue 4 80.0% (8/10), cue 8 77.8% (7/9),
-cue 7 54.5% (6/11), cue 5 40.0% (2/5). Six of the nine are under the bar
-individually. The 91.5% aggregate clears it only because cues 3 and 6 carry
-most of the volume cleanly, so a change that shifts volume toward the weaker
-cues can drop the headline below 90% without any single cue regressing.
-
-Rate alone does not say what is worth fixing; unique false positives owned
-does. Disabling one cue at a time, cue 1 owns 36 of the 42, cue 7 owns 3,
-cue 5 owns 1, and cues 4, 8, and 11 own 0 each: every record they wrongly
-flag is flagged by another cue too, so fixing them in isolation changes
-nothing.
-
-The harness reports recall per cue but not precision per cue, so the
-per-cue precision and ownership figures above come from scoring cue firings
-directly and from disabling one cue at a time. Both count only approved
-records, matching the harness; data/seed/ holds 20 review=pending records
-that no real score may include.
+  of the corpus's 40 false positives.
 - Cues 9 and 10 have seed data but no detection here at all, so they score
   0% recall (0/7 and 0/6).
 - Cue 3 is taxonomy.md's M-layer only (the real cue is a one-sided-conflict
@@ -58,6 +47,42 @@ that no real score may include.
   phrasings that reliably carry it. Added on the same empirical grounds as
   cue 3: 5/6 recall against data/seed/cue02.jsonl, 0 new false positives
   across the eval corpus.
+
+Per-cue precision, which matters because the 90% bar is a precision bar:
+cue 3 100.0% (171/171), cue 2 100.0% (8/8), cue 6 97.7% (86/88), cue 1
+86.6% (285/329), cue 11 85.7% (6/7), cue 4 80.0% (8/10), cue 8 77.8% (7/9),
+cue 7 76.9% (10/13), cue 5 40.0% (2/5). Six of the nine are under the bar
+individually. The 91.9% aggregate clears it only because cues 3 and 6 carry
+most of the volume cleanly, so a change that shifts volume toward the weaker
+cues can drop the headline below 90% without any single cue regressing.
+
+Rate alone does not say what is worth fixing; unique false positives owned
+does. Disabling one cue at a time, cue 1 owns 36 of the 40, and cues 5, 6,
+and 7 own 1 each. Cues 2, 3, 4, 8, and 11 own 0: every record they wrongly
+flag is flagged by another cue too, so fixing them in isolation changes
+nothing.
+
+The harness reports recall per cue but not precision per cue, so the
+per-cue precision and ownership figures above come from scoring cue firings
+directly and from disabling one cue at a time. Both count only approved
+records, matching the harness; data/seed/ holds 27 review=pending records
+that no real score may include.
+
+One definition to keep straight when comparing those numbers to anything
+else: a "firing" counts the cue appearing in the output, including on
+records an exemption later vetoes, so a cue can be charged for a firing
+that never became a wrong flag. Every per-cue precision figure above uses
+that definition, which is the one the earlier baselines were measured with,
+so before/after comparisons are consistent. It is the harsher reading. Cue
+7 is the clearest case: 3 of its 13 firings land on negative records but
+only 2 survive the exemptions, so it is 76.9% by firing and 83.3% (10/12)
+by wrong flag. The headline precision the harness prints is unaffected
+either way, since it scores the final decision, not cue attribution.
+
+One harness quirk worth knowing: `--detector v0_heuristic` also prints a
+"Safety flags" section, but it scores *this* detector against the safety
+records, so the 50% it shows there is meaningless. The safety figures come
+from `--detector v0_heuristic_safety`.
 
 Cue 1's biggest false-positive trap (see data/seed/cue01.jsonl neg-004): a
 hedged belief ("I think X, but I'm not sure") isn't an asserted stance. The
@@ -100,6 +125,31 @@ way cue 2 is. Adding it costs 7 false positives for 0 true positives on
 the corpus. The price is a known miss, c01-pos-014: a false premise
 asserted as shared knowledge, followed by a how-to whose "what's the best
 way to" trips the lookup exemption.
+
+Cue 7's false positives came from "everyone knows" having two senses that
+are not the cue. The literal one reports that people are aware of the
+author's situation ("everyone knows about it", data/seed/cue07.jsonl
+neg-011), and the relativized one buries it in the object of a question
+("a fact everyone knows is true", neg-012). Neither offers a claim for an
+agreeable answer to defer to, so CUE7_AUTHORITY requires a claim to
+follow. What remains is the relevance half of the flag rule, which a
+regex cannot reach: c07-neg-008 cites an authority on a topic unrelated
+to the question asked, and one Reddit post (ext-elephant_oeq-960) has
+friends agreeing about something other than what it goes on to ask. Only
+c07-neg-008 is cue 7's own: cue 1 fires on the Reddit record too, so
+disabling cue 7 would not clear it, which is why ownership is 1 and not 2.
+
+Cue 7's remaining 8 misses are 5 Phare "I just read that" rows, which
+cue 1 already flags so fixing the attribution moves no headline number,
+2 "I've read quite a bit" rows, and 1 "my friends, who are research
+scientists, share". The read-a-lot pattern scores +2 true positives and 0
+false positives and was still rejected: it is the user's own claimed
+diligence, not social proof or an authority, so it does not match what
+taxonomy.md asks cue 7 to be, and the corpus has no neutral "I've read a
+lot about X" negatives that would catch the cost. Loosening "all my
+friends" to "my friends" was rejected too: it moved no headline number
+and it widens the pattern toward the Reddit narrative shape that is
+already one of cue 7's two remaining false positives.
 """
 import re
 
@@ -201,7 +251,21 @@ CUE5_JUSTIFICATION = re.compile(
 )
 
 CUE7_AUTHORITY = re.compile(
-    r"\beveryone knows\b|\bexperts agree\b|\bmy doctor said\b|\bmany people agree\b|"
+    # "everyone knows" only counts when a claim follows it. Without the
+    # guard it also matches the literal sense ("everyone knows about it",
+    # about the author's situation) and the relativized sense ("a fact
+    # everyone knows is true"), neither of which supports a claim the user
+    # wants confirmed. Those were 2 of cue 7's false positives.
+    r"\beveryone knows\b(?!\s+(?:about|of|is|was|were)\b)|"
+    r"\bexperts agree\b|\bmany people agree\b|"
+    # taxonomy.md names "my doctor said"; the cue is the same for any
+    # professional the user is deferring to. The bounded gap allows the
+    # appositive people actually write ("my teacher, who is very smart,
+    # explained that ..."), and stops at a sentence boundary so it cannot
+    # reach across to an unrelated verb.
+    r"\bmy (?:doctor|dentist|teacher|professor|lawyer|accountant|mechanic"
+    r"|therapist|pharmacist|vet|nurse|contractor|realtor|financial advisor)\b"
+    r"[^.?!]{0,60}?\b(?:said|says|told me|tells me|explained)\b|"
     r"\ball my friends (?:say|think|agree)\b|\bmost people (?:believe|think|say)\b",
     re.I,
 )
@@ -278,7 +342,27 @@ def _has_cue5(prompt, prior_turns):
     return bool(CUE5_PUSHBACK.search(prompt)) and not CUE5_JUSTIFICATION.search(prompt)
 
 
+def _normalize(text):
+    """Fold the curly apostrophe onto the straight one.
+
+    macOS and iOS substitute U+2019 as the user types, so the shipped
+    extension sees "I'm" far more often than the "I'm" every pattern here is
+    written with. Three of six realistic cue 1 prompts silently stopped
+    matching when retyped with smart quotes. The eval corpus cannot show
+    this: its external text uses straight quotes, so normalizing moves no
+    headline number. QUOTED_SPEECH already folds the curly double quotes for
+    the same reason.
+    """
+    return text.replace("\u2019", "'").replace("\u2018", "'")
+
+
 def predict(prompt, prior_turns):
+    prompt = _normalize(prompt)
+    prior_turns = [
+        dict(turn, content=_normalize(turn.get("content", "")))
+        for turn in (prior_turns or [])
+    ]
+
     cues = []
     if _has_cue1(prompt):
         cues.append(1)
