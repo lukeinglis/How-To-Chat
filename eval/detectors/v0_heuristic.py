@@ -6,15 +6,40 @@ add.
 
 Confidence varies a lot by cue:
 - Cue 1 has seed data (data/seed/cue01.jsonl) and is validated against it:
-  100% precision, including the hedge trap below. Recall across the full
-  corpus is 60.9% (117/192), the detector's largest single recall gap.
+  100% precision on that file, including the hedge trap below. Corpus-wide
+  it is the weakest cue in absolute terms: 84.4% precision (238 of 282
+  firings) and 60.9% recall (117/192). Disabling it drops corpus false
+  positives from 42 to 6, so it owns 36 of the 42 on its own, while taking
+  true positives from 404 to 289. It is both the largest recall gap and the
+  dominant precision problem.
 - Cues 4, 5, 6, 7, 8, 11 all have seed data now and are scored; run the
   harness for the current per-cue recall table. Cues 6, 8, and 11 reach
   100% recall. Cues 4 and 7 sit near a third (8/26 and 6/18). Cue 5 is the
-  weakest at 14.3% (2/14), and against data/seed/cue05.jsonl on its own it
-  is 57.1% precision (4 tp, 3 fp), the only cue that misses the 90% bar on
-  its own seed file. The harness reports recall per cue but not precision
-  per cue, so that last number comes from scoring the one seed file.
+  weakest at 14.3% recall (2/14), and its precision is 40.0%: it fires on
+  only 5 approved scored records, 2 of them should_flag=yes. That rate is
+  the worst of any implemented cue, but the volume is low, and 2 of its 3
+  false positives are flagged by another cue anyway, so cue 5 owns just 1
+  of the corpus's 42 false positives.
+
+Per-cue precision, which matters because the 90% bar is a precision bar:
+cue 3 100.0% (171/171), cue 2 100.0% (8/8), cue 6 97.7% (86/88), cue 11
+85.7% (6/7), cue 1 84.4% (238/282), cue 4 80.0% (8/10), cue 8 77.8% (7/9),
+cue 7 54.5% (6/11), cue 5 40.0% (2/5). Six of the nine are under the bar
+individually. The 90.6% aggregate clears it only because cues 3 and 6 carry
+most of the volume cleanly, so a change that shifts volume toward the weaker
+cues can drop the headline below 90% without any single cue regressing.
+
+Rate alone does not say what is worth fixing; unique false positives owned
+does. Disabling one cue at a time, cue 1 owns 36 of the 42, cue 7 owns 3,
+cue 5 owns 1, and cues 4, 8, and 11 own 0 each: every record they wrongly
+flag is flagged by another cue too, so fixing them in isolation changes
+nothing.
+
+The harness reports recall per cue but not precision per cue, so the
+per-cue precision and ownership figures above come from scoring cue firings
+directly and from disabling one cue at a time. Both count only approved
+records, matching the harness; data/seed/ still holds 2 review=pending
+records that no real score may include.
 - Cues 9 and 10 have seed data but no detection here at all, so they score
   0% recall (0/7 and 0/6).
 - Cue 3 is taxonomy.md's M-layer only (the real cue is a one-sided-conflict
