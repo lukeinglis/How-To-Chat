@@ -45,14 +45,17 @@ Measured state, from `python3 eval/run_eval.py --detector v0_heuristic`: 90.6% p
 Next, in order, with detector hardening ahead of any new surface or model work (`docs/decisions.md`, 2026-10-07):
 1. Grow `data/seed/safety/` past 25 records so the safety numbers carry information. The extension already ships a red safety badge on that 100% figure.
 2. Fix cue 1 on both axes. Recall is 60.9% with 75 of 192 records missed, the largest single recall gap and the main drag on the 76.8% headline. Precision is 84.4% (238 of 282 firings), and disabling cue 1 takes corpus false positives from 42 to 6, so it owns 36 of the 42 by itself. It dominates both counts, so treat precision and recall as one job rather than raising recall on the cue that is already the biggest source of false flags.
-3. Raise cue 5 precision, at 40.0% (2 of 5 firings), the worst rate of any implemented cue. Volume is low, so expect little headline movement: cue 5 owns 1 of the 42 false positives, and 2 of its 3 share a record with another firing cue. Its 14.3% recall (2/14) is the worse number in isolation, and the pattern set is small enough that one rewrite can address both.
-4. Fine-tuned small classifier (v1), trained on generated data, never on external eval data.
-5. Impact eval: do flagged prompts actually get more agreeable answers from current models?
-6. Relationships tip-copy change for cues 3, 9 when `domain: "relationships"`, naming the over-trust failure mode.
+3. Raise cue 7 precision, at 54.5% (6 of 11 firings). It owns 3 of the 42 false positives, three times cue 5's share, so it comes first of the two low-volume precision items despite the better rate. Its recall is 33.3% (6/18).
+4. Raise cue 5 precision, at 40.0% (2 of 5 firings), the worst rate of any implemented cue. Volume is the lowest of the three, so expect little headline movement: cue 5 owns 1 of the 42 false positives, and 2 of its 3 share a record with another firing cue. Its 14.3% recall (2/14) is the worse number in isolation, and the pattern set is small enough that one rewrite can address both.
+5. Fine-tuned small classifier (v1), trained on generated data, never on external eval data.
+6. Impact eval: do flagged prompts actually get more agreeable answers from current models?
+7. Relationships tip-copy change for cues 3, 9 when `domain: "relationships"`, naming the over-trust failure mode.
 
-Items 2 and 3 touch detector code, so run `python3 scripts/check_parity.py` after either. Per-cue precision is not a harness output; the figures above come from scoring cue firings and from disabling one cue at a time, over approved records only.
+Items 2 through 4 touch detector code, so run `python3 scripts/check_parity.py` after any of them. Per-cue precision is not a harness output; the figures above come from scoring cue firings and from disabling one cue at a time, over approved records only.
 
-Worth knowing before picking up either item: six of the nine implemented cues are individually under the 90% bar (cue 1 at 84.4%, cue 4 80.0%, cue 5 40.0%, cue 7 54.5%, cue 8 77.8%, cue 11 85.7%). The 90.6% aggregate clears it because cue 3 (171/171) and cue 6 (86/88) carry most of the volume cleanly. So the bar is currently met in aggregate, not cue by cue, and any change that shifts volume toward the weaker cues can drop the headline below 90% without any single cue getting worse.
+Worth knowing before picking up any of those three: six of the nine implemented cues are individually under the 90% bar (cue 1 at 84.4%, cue 4 80.0%, cue 5 40.0%, cue 7 54.5%, cue 8 77.8%, cue 11 85.7%). The 90.6% aggregate clears it because cue 3 (171/171) and cue 6 (86/88) carry most of the volume cleanly. So the bar is met in aggregate, not cue by cue, and any change that shifts volume toward the weaker cues can drop the headline below 90% without any single cue getting worse.
+
+Cues 4, 8, and 11 are under the bar but deliberately not on the list: each owns 0 unique false positives, meaning every record they wrongly flag is also flagged by another cue, so fixing them alone changes nothing. Ranked by unique false positives owned, the order is cue 1 at 36, cue 7 at 3, cue 5 at 1, and the rest at 0. Re-measure that ownership before adding a precision item, since it is what separates a real gain from a cosmetic one.
 
 Surfaces beyond chatgpt.com are gated behind that hardening: the Claude and Gemini sites first, then a Safari web extension on macOS and iOS/iPadOS. Safari stays a local unsigned build with no Apple Developer Program purchase until the detector is defensible, and no other Apple surface is on the table (`docs/decisions.md`, 2026-10-07).
 

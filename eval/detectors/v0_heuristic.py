@@ -29,6 +29,12 @@ individually. The 90.6% aggregate clears it only because cues 3 and 6 carry
 most of the volume cleanly, so a change that shifts volume toward the weaker
 cues can drop the headline below 90% without any single cue regressing.
 
+Rate alone does not say what is worth fixing; unique false positives owned
+does. Disabling one cue at a time, cue 1 owns 36 of the 42, cue 7 owns 3,
+cue 5 owns 1, and cues 4, 8, and 11 own 0 each: every record they wrongly
+flag is flagged by another cue too, so fixing them in isolation changes
+nothing.
+
 The harness reports recall per cue but not precision per cue, so the
 per-cue precision and ownership figures above come from scoring cue firings
 directly and from disabling one cue at a time. Both count only approved
