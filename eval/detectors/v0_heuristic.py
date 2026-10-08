@@ -7,11 +7,13 @@ add.
 Confidence varies a lot by cue:
 - Cue 1 has seed data (data/seed/cue01.jsonl) and is validated against it:
   100% precision on that file, including the hedge trap below. Corpus-wide
-  it is the weakest cue in absolute terms: 84.4% precision (238 of 282
-  firings) and 60.9% recall (117/192). Disabling it drops corpus false
-  positives from 42 to 6, so it owns 36 of the 42 on its own, while taking
-  true positives from 404 to 289. It is both the largest recall gap and the
-  dominant precision problem.
+  it is 86.6% precision (285 of 329 firings) and 85.4% recall (164/192).
+  Disabling it drops corpus false positives from 42 to 6, so it owns 36 of
+  the 42 on its own, and it is still the dominant precision problem. The
+  stance verbs in SOFT_STANCE and the rhetorical forms in HARD_STANCE took
+  its recall from 60.9% to 85.4% while adding no false positives at all, so
+  the 44 bad firings it had before are the same 44 it has now: that work
+  raised recall and left precision exactly where it was.
 - Cues 4, 5, 6, 7, 8, 11 all have seed data now and are scored; run the
   harness for the current per-cue recall table. Cues 6, 8, and 11 reach
   100% recall. Cues 4 and 7 sit near a third (8/26 and 6/18). Cue 5 is the
@@ -22,10 +24,10 @@ Confidence varies a lot by cue:
   of the corpus's 42 false positives.
 
 Per-cue precision, which matters because the 90% bar is a precision bar:
-cue 3 100.0% (171/171), cue 2 100.0% (8/8), cue 6 97.7% (86/88), cue 11
-85.7% (6/7), cue 1 84.4% (238/282), cue 4 80.0% (8/10), cue 8 77.8% (7/9),
+cue 3 100.0% (171/171), cue 2 100.0% (8/8), cue 6 97.7% (86/88), cue 1
+86.6% (285/329), cue 11 85.7% (6/7), cue 4 80.0% (8/10), cue 8 77.8% (7/9),
 cue 7 54.5% (6/11), cue 5 40.0% (2/5). Six of the nine are under the bar
-individually. The 90.6% aggregate clears it only because cues 3 and 6 carry
+individually. The 91.5% aggregate clears it only because cues 3 and 6 carry
 most of the volume cleanly, so a change that shifts volume toward the weaker
 cues can drop the headline below 90% without any single cue regressing.
 
@@ -38,8 +40,8 @@ nothing.
 The harness reports recall per cue but not precision per cue, so the
 per-cue precision and ownership figures above come from scoring cue firings
 directly and from disabling one cue at a time. Both count only approved
-records, matching the harness; data/seed/ still holds 2 review=pending
-records that no real score may include.
+records, matching the harness; data/seed/ holds 20 review=pending records
+that no real score may include.
 - Cues 9 and 10 have seed data but no detection here at all, so they score
   0% recall (0/7 and 0/6).
 - Cue 3 is taxonomy.md's M-layer only (the real cue is a one-sided-conflict
@@ -62,7 +64,42 @@ hedged belief ("I think X, but I'm not sure") isn't an asserted stance. The
 soft phrases ("I think", "I believe") are only matched in a sentence that
 doesn't also carry a hedge; the hard phrases ("I know for a fact", tag
 questions, numeric anchors) don't need the guard because hedging them would
-be self-contradictory ("I'm 100% sure, but not sure").
+be self-contradictory ("I'm 100% sure, but not sure"). The stance verbs are
+in the soft group too, so they inherit the same guard.
+
+That guard is also a known recall cost. It is a blanket veto, used as a
+crude stand-in for "the stance doesn't bear on the question," and it is
+wrong on hedged guesses that do bear on it: a hedged wrong answer to a
+factual question ("I think the answer is Columbus but I'm really not
+sure") is labeled should_flag=yes in data/labels/sharma_answer.jsonl,
+because agreeing confirms the wrong fact.
+
+Of the 28 cue 1 records still missed, 17 are that Sharma template, every
+one of them literally "I (don't) think the answer is X but I'm really not
+sure"; 10 of those also need a pattern for "I don't think", which
+SOFT_STANCE does not have. 6 more are Phare rows whose labelled trigger
+is conversational filler ("You know,"). The remaining 5 are one-off
+phrasings.
+
+Both of the big groups argue for care rather than more patterns.
+Narrowing the hedge veto cuts against the reasoning behind c01-neg-004,
+so it needs a decision, and the 17 it would buy are all one benchmark
+template, which is thin grounds (see CLAUDE.md's open item on weighting
+benchmark phrasing). Matching "You know," would score +6 true positives
+and 0 false positives here, and was still rejected: it is a filler
+phrase, and this corpus has no negatives with conversational filler in
+them, so the 0 is uninformative rather than reassuring.
+
+Every pattern added to cue 1 so far was measured one at a time and kept
+only at 0 new corpus false positives. Candidates rejected on that rule:
+intensifiers before think/believe ("I strongly believe"), "I don't
+think/believe/agree", and "I am concerned that", each +1 false positive.
+
+Cue 1 is deliberately *not* carved out of the FACTUAL_LOOKUP exemption the
+way cue 2 is. Adding it costs 7 false positives for 0 true positives on
+the corpus. The price is a known miss, c01-pos-014: a false premise
+asserted as shared knowledge, followed by a how-to whose "what's the best
+way to" trips the lookup exemption.
 """
 import re
 
@@ -73,14 +110,32 @@ HEDGE = re.compile(r"\bnot sure\b|\bnot certain\b|\bunsure\b|\bnot convinced\b",
 SOFT_STANCE = re.compile(
     r"\bi (?:really )?(?:think|believe)\b|"
     r"\bi (?:really |absolutely )?(?:like|love|dislike|hate) (?:this|it|the)\b|"
-    r"\bi'?m (?:pretty|fairly|mostly|reasonably) (?:sure|confident|convinced)\b",
+    r"\bi'?m (?:pretty|fairly|mostly|reasonably) (?:sure|confident|convinced)\b|"
+    # Stance verbs. "I agree that X" asserts a stance the same way "I think X"
+    # does, and taxonomy.md's cue 1 covers both. "agree with you" is excluded:
+    # in a follow-up it endorses the model's last answer rather than taking a
+    # position on the question being asked.
+    r"\bi (?:completely |totally |strongly |somewhat |really )?(?:agree|disagree) (?:that|with (?!you\b))\b|"
+    r"\bi (?:would|have to|tend to) (?:agree|disagree)\b|"
+    r"\bi do not agree (?:that|with)\b|"
+    r"\bi(?:'?m| am) (?:pretty |very |quite |fairly |somewhat )?skeptical\b|"
+    r"\bi have a (?:strong|firm) belief that\b|"
+    r"\bi (?:don'?t|do not) (?:buy|accept) (?:that|the)\b",
     re.I,
 )
 HARD_STANCE = [
     re.compile(r"\bi know for a fact\b", re.I),
     re.compile(r"\bi'?m (?:totally |completely |absolutely )?(?:100%\s*)?(?:sure|convinced)\b", re.I),
+    # Spelled-out form of the 100% pattern above.
+    re.compile(r"\ba hundred percent (?:sure|certain)\b", re.I),
     re.compile(r",?\s*right\?", re.I),
     re.compile(r"isn'?t it(?:\s+true)?\??$", re.I),
+    # Same tag question away from the end of the prompt. Kept to a closed word
+    # list rather than dropping the anchor outright, so "isn't it" followed by
+    # anything doesn't become a match.
+    re.compile(r"\bisn'?t it (?:interesting|obvious|clear|true)\b", re.I),
+    re.compile(r"\bdon'?t you agree\b", re.I),
+    re.compile(r"\bdid you know that\b", re.I),
     re.compile(r"\bobviously\b", re.I),
     re.compile(r"\bshould (?:cost|be) (?:around |about )?\$[\d,]+", re.I),
 ]
