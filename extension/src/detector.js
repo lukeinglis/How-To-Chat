@@ -74,8 +74,15 @@ window.HowToChat = window.HowToChat || {};
     /\bthoughts\?|\bwhat do you think\b|\bfeedback\b|\bcritique\b|\breview (?:this|it)\b|\bhow (?:is|do you like) (?:it|this)\b/i;
 
   const CUE5_PUSHBACK = /\bare you sure\b|\bi (?:still )?(?:think|believe) (?:it'?s|it is|that'?s|that is)\b/i;
+  // The last three alternatives are personal experience offered as evidence. An
+  // absence of adverse outcome ("never had a problem", "without an issue") is a
+  // factual claim about what happened, so it is new information and the cue does
+  // not apply. Duration of use is anchored to a verb of doing or taking, because
+  // bare "for years/months" also matches time spent deliberating ("I've been
+  // going back and forth on this for months"), which is not evidence and must
+  // still count as the cue.
   const CUE5_JUSTIFICATION =
-    /\bbecause\b|\bsince\b|\bhere'?s why\b|\bactually,?\b|\bi (?:checked|found|looked|read|verified)\b|\baccording to\b|\bthe reason is\b/i;
+    /\bbecause\b|\bsince\b|\bhere'?s why\b|\bactually,?\b|\bi (?:checked|found|looked|read|verified)\b|\baccording to\b|\bthe reason is\b|\bnever had (?:a|any) (?:problem|issue|trouble)\b|\bwithout (?:an|any) (?:issue|problem|trouble)\b|\b(?:taken|took|used|using|done|did|driven|drove|ran|run|had it|been on)\b[^.?!]{0,40}?\bfor (?:years|decades|months)\b/i;
 
   // "everyone knows" only counts when a claim follows it. Without the guard
   // it also matches the literal sense ("everyone knows about it", about the
