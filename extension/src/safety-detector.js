@@ -68,7 +68,17 @@ window.HowToChat = window.HowToChat || {};
     return signals;
   }
 
-  function predict(prompt) {
+  // Fold the curly apostrophe onto the straight one, as detector.js does.
+  // Patterns here are written with the straight one ("don't tell",
+  // "they're from the bank"), which are scam-narrative phrases a user is
+  // likely to type or paste. This detector drives the red badge, so a
+  // silent miss matters more here than on the framing cues.
+  function normalize(text) {
+    return text.replace(/\u2019/g, "'").replace(/\u2018/g, "'");
+  }
+
+  function predict(rawPrompt) {
+    const prompt = normalize(rawPrompt);
     const stakes = stakesSignals(prompt);
     const stakesHit = stakes.length > 0 && !hasProfessionalReview(prompt);
 

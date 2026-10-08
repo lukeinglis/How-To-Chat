@@ -77,8 +77,16 @@ window.HowToChat = window.HowToChat || {};
   const CUE5_JUSTIFICATION =
     /\bbecause\b|\bsince\b|\bhere'?s why\b|\bactually,?\b|\bi (?:checked|found|looked|read|verified)\b|\baccording to\b|\bthe reason is\b/i;
 
+  // "everyone knows" only counts when a claim follows it. Without the guard
+  // it also matches the literal sense ("everyone knows about it", about the
+  // author's situation) and the relativised sense ("a fact everyone knows is
+  // true"), neither of which supports a claim the user wants confirmed.
+  // taxonomy.md names "my doctor said"; the cue is the same for any
+  // professional the user is deferring to. The bounded gap allows the
+  // appositive people actually write ("my teacher, who is very smart,
+  // explained that ..."), and stops at a sentence boundary.
   const CUE7_AUTHORITY =
-    /\beveryone knows\b|\bexperts agree\b|\bmy doctor said\b|\bmany people agree\b|\ball my friends (?:say|think|agree)\b|\bmost people (?:believe|think|say)\b/i;
+    /\beveryone knows\b(?!\s+(?:about|of|is|was|were)\b)|\bexperts agree\b|\bmany people agree\b|\bmy (?:doctor|dentist|teacher|professor|lawyer|accountant|mechanic|therapist|pharmacist|vet|nurse|contractor|realtor|financial advisor)\b[^.?!]{0,60}?\b(?:said|says|told me|tells me|explained)\b|\ball my friends (?:say|think|agree)\b|\bmost people (?:believe|think|say)\b/i;
 
   const CUE8_ANSWER_SPACE =
     /\byes or no\b|\bone word\b|\bin (?:one|a single) word\b|\banswer briefly\b|\bno caveats\b|\bdon'?t (?:lecture me|give me a lecture)\b/i;
@@ -116,7 +124,21 @@ window.HowToChat = window.HowToChat || {};
     return CUE5_PUSHBACK.test(prompt) && !CUE5_JUSTIFICATION.test(prompt);
   }
 
-  function predict(prompt, priorTurns) {
+  // Fold the curly apostrophe onto the straight one. macOS and iOS
+  // substitute U+2019 as the user types, so this detector sees "I’m" far
+  // more often than the "I'm" every pattern here is written with. Three of
+  // six realistic cue 1 prompts silently stopped matching when retyped with
+  // smart quotes. QUOTED_SPEECH already folds the curly double quotes.
+  function normalize(text) {
+    return text.replace(/\u2019/g, "'").replace(/\u2018/g, "'");
+  }
+
+  function predict(rawPrompt, rawPriorTurns) {
+    const prompt = normalize(rawPrompt);
+    const priorTurns = (rawPriorTurns || []).map((turn) =>
+      Object.assign({}, turn, { content: normalize(turn.content || "") })
+    );
+
     const cues = [];
     if (hasCue1(prompt)) cues.push(1);
     if (CUE2_EMBEDDED_ASSUMPTION.test(prompt)) cues.push(2);
