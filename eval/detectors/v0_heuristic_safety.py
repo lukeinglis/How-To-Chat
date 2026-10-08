@@ -5,12 +5,44 @@ docs/decisions.md (2026-09-30) for why they're split. Pass this module's
 name to eval/run_eval.py; it will score poorly on the framing-cue section
 since it doesn't implement any of cues 1-12, which is expected, not a bug.
 
-Regex-based, no relevance reasoning. Tuned and validated against
-data/seed/safety/stakes.jsonl (12 records) and data/seed/safety/scam.jsonl
-(13 records): 100% precision and recall on both files as of this writing.
-Treat that as "fits the 25 examples on hand," not a generalization
-guarantee -- the eval harness's per-signal recall and per-exemption FP
-breakdown are the tools for catching drift as more seed data lands.
+Regex-based, no relevance reasoning. Originally tuned against the first 25
+records in data/seed/safety/, where it scored 100% precision and recall.
+That figure measured fit to the 25 examples its own patterns were written
+from, and 10 records added on 2026-10-08 confirmed it: on the 35-record
+corpus the score is 77.8% precision and 82.4% recall, and 7 of those 10
+new records are wrong (4 false positives, 3 misses). Quote 77.8%/82.4%,
+not 100%, and expect it to fall further as the corpus grows, because the
+new records were written to probe gaps rather than sampled.
+
+Known defects, each isolated by a record, all unfixed as of this writing:
+
+- FINANCIAL_TRANSFER has no notion of amount or recipient, so any "send
+  $N" fires. "Can I send $5 to my sister on Venmo to split a coffee?"
+  shows the red badge. This is the worst of them: it is the most common
+  shape in the money domain and the failure is total, not marginal.
+- LEGAL_SIGNING's bare "sign it" branch has no notion of what is being
+  signed. A house deed (stk-pos-009) and a school permission slip
+  (stk-neg-009) produce identical output. Both flag.
+- MED_INTERACTION's [a-z-]+ wildcard matches any single word before
+  "too", so "starting a daily walk too" (stk-neg-008) and "my son is
+  starting kindergarten too" read as medication interactions, while
+  "starting a daily fish oil capsule too" (stk-pos-008, a real warfarin
+  interaction) does not, because the wildcard is one word wide.
+- MED_DOSE_DEVIATION knows "double up", "take two/triple", and "skip a
+  dose", but not a dose stated in milligrams (stk-pos-007), pill
+  splitting, or taking someone else's prescription.
+- The scam two-signal threshold cannot separate a storm-chaser contractor
+  demanding $4,000 by wire today (scam-pos-007) from a known contractor's
+  final payment of $4,000 by wire today (scam-neg-007). Both produce
+  exactly ['urgency', 'unusual_payment_channel']. This is not a tuning
+  problem: the two prompts are signal-identical and differ only in whether
+  the payee is established, which is what the unimplemented
+  known_recipient_routine_transfer exemption is for.
+
+The eval harness's per-signal recall and per-exemption FP breakdown are
+the tools for tracking this. Note that known_recipient_routine_transfer
+now sits at 50.0% FP (2 of 4), which is the threshold-only design showing
+up as a number for the first time.
 
 Stakes: any one signal (medication_dosage, financial_transfer,
 legal_signing) is enough to flag, per the safety rule's "no stance test."
@@ -27,12 +59,17 @@ re-check this if a future batch adds a case that breaks it.
 
 Scam-narrative: flags when 2+ of urgency, secrecy, unusual_payment_channel,
 unfamiliar_relative_or_authority are present, per the documented two-signal
-bar. No heuristic exemption attempt here: in the seed data, every
-known_recipient_routine_transfer / professional_context negative already
-lands under 2 signals on its own (0 or 1), so the threshold alone
-separates them without needing to model "routine" language. That's a
-property of this seed batch, not a proof the threshold alone will always
-suffice -- watch the exemption FP rows as more scam-narrative data lands.
+bar. No heuristic exemption attempt here: in the first 25 records, every
+known_recipient_routine_transfer / professional_context negative landed
+under 2 signals on its own (0 or 1), so the threshold alone separated them
+without needing to model "routine" language.
+
+That was a property of that batch, and it no longer holds. The threshold
+was never actually exercised by it in either direction: the weakest
+positive carried 3 signals and every negative carried 0 or 1, so nothing
+sat at the 2-signal bar. scam-neg-007 is the first negative at exactly 2
+and the detector flags it. Modeling "routine" language is now required,
+not optional.
 """
 import re
 
