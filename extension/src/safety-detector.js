@@ -2,6 +2,13 @@
 // is the detector actually shipped, that one is what the eval harness
 // scores. Separate from detector.js because the safety flags (docs/safety.md)
 // use their own rule and vocab, not the 12 framing cues.
+//
+// This file drives the red badge and it is currently below the project's 90%
+// precision bar: 77.8% precision and 82.4% recall over 35 records. Read the
+// Python module's docstring before changing anything here; it lists five
+// known defects, each pinned to a record. The one most likely to be seen by a
+// real user is that any "send $N" fires the stakes flag regardless of amount
+// or recipient, so "send $5 to my sister on Venmo" shows the badge.
 window.HowToChat = window.HowToChat || {};
 
 (function () {
