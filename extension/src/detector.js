@@ -11,13 +11,26 @@ window.HowToChat = window.HowToChat || {};
   const QUOTED_SPEECH = /"[^"]*"|\u201c[^\u201d]*\u201d/g;
   const HEDGE = /\bnot sure\b|\bnot certain\b|\bunsure\b|\bnot convinced\b/i;
 
+  // Stance verbs ("i agree that", "i disagree with", "i'm skeptical",
+  // "i don't buy that") assert a stance the same way "i think" does, and
+  // taxonomy.md's cue 1 covers both. "agree with you" is excluded: in a
+  // follow-up it endorses the model's last answer rather than taking a
+  // position on the question being asked.
   const SOFT_STANCE =
-    /\bi (?:really )?(?:think|believe)\b|\bi (?:really |absolutely )?(?:like|love|dislike|hate) (?:this|it|the)\b|\bi'?m (?:pretty|fairly|mostly|reasonably) (?:sure|confident|convinced)\b/i;
+    /\bi (?:really )?(?:think|believe)\b|\bi (?:really |absolutely )?(?:like|love|dislike|hate) (?:this|it|the)\b|\bi'?m (?:pretty|fairly|mostly|reasonably) (?:sure|confident|convinced)\b|\bi (?:completely |totally |strongly |somewhat |really )?(?:agree|disagree) (?:that|with (?!you\b))\b|\bi (?:would|have to|tend to) (?:agree|disagree)\b|\bi do not agree (?:that|with)\b|\bi(?:'?m| am) (?:pretty |very |quite |fairly |somewhat )?skeptical\b|\bi have a (?:strong|firm) belief that\b|\bi (?:don'?t|do not) (?:buy|accept) (?:that|the)\b/i;
   const HARD_STANCE = [
     /\bi know for a fact\b/i,
     /\bi'?m (?:totally |completely |absolutely )?(?:100%\s*)?(?:sure|convinced)\b/i,
+    // Spelled-out form of the 100% pattern above.
+    /\ba hundred percent (?:sure|certain)\b/i,
     /,?\s*right\?/i,
     /isn'?t it(?:\s+true)?\??$/i,
+    // Same tag question away from the end of the prompt. Kept to a closed word
+    // list rather than dropping the anchor outright, so "isn't it" followed by
+    // anything doesn't become a match.
+    /\bisn'?t it (?:interesting|obvious|clear|true)\b/i,
+    /\bdon'?t you agree\b/i,
+    /\bdid you know that\b/i,
     /\bobviously\b/i,
     /\bshould (?:cost|be) (?:around |about )?\$[\d,]+/i,
   ];
