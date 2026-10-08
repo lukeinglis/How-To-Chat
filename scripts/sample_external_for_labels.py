@@ -8,10 +8,11 @@ recall: how many real positives the heuristic is missing) per source. Sample
 size is capped by what's actually available in a source, not scaled to its
 raw row count -- see the CLAUDE.md discussion this script implements.
 
-v0_heuristic only emits cues 1, 4, 5, 6, 7, 8, 11, 12 (roadmap's v0 scope).
-Cues 2, 3, 9, 10 will not be represented by this stratification since the
-heuristic never predicts them; those need separate random or keyword-based
-sampling to get labeling coverage.
+v0_heuristic emits cues 1-8 and 11, so the stratification covers those. Cues
+9 and 10 are the only ones it never predicts, so they will not be represented
+here; those need separate random or keyword-based sampling to get labeling
+coverage. The pools below are split on the detector's live output rather than
+a hardcoded cue list, so this note going stale does not skew the sample.
 
 Output goes to data/external/candidates/<source>.jsonl (gitignored, since it
 carries prompt text -- same rule as data/external/converted/). Never commit

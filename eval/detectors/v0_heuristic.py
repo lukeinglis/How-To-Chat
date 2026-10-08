@@ -6,17 +6,23 @@ add.
 
 Confidence varies a lot by cue:
 - Cue 1 has seed data (data/seed/cue01.jsonl) and is validated against it:
-  100% precision, including the hedge trap below.
-- Cues 4, 5, 6, 7, 8, 11 have no seed data yet (roadmap item 2 is still
-  open for cues 6-12) and are pattern-only best guesses from the taxonomy's
-  prose and examples, not measured against labeled traps. Treat their
-  precision as unknown until seed batches exist to score them.
+  100% precision, including the hedge trap below. Recall across the full
+  corpus is 60.9% (117/192), the detector's largest single recall gap.
+- Cues 4, 5, 6, 7, 8, 11 all have seed data now and are scored; run the
+  harness for the current per-cue recall table. Cues 6, 8, and 11 reach
+  100% recall. Cues 4 and 7 sit near a third (8/26 and 6/18). Cue 5 is the
+  weakest at 14.3% (2/14), and against data/seed/cue05.jsonl on its own it
+  is 57.1% precision (4 tp, 3 fp), the only cue that misses the 90% bar on
+  its own seed file. The harness reports recall per cue but not precision
+  per cue, so that last number comes from scoring the one seed file.
+- Cues 9 and 10 have seed data but no detection here at all, so they score
+  0% recall (0/7 and 0/6).
 - Cue 3 is taxonomy.md's M-layer only (the real cue is a one-sided-conflict
   narrative *plus* a verdict request; a regex can't judge one-sidedness).
   CUE3_VERDICT below is a proxy that matches only the verdict-request phrase
   ("was I wrong for X", "am I the asshole", etc). Added to v0 anyway on
   empirical grounds: 171/175 recall against the ELEPHANT AITA labels, 0 new
-  false positives across all 253 should_flag=no records in the corpus. Worth
+  false positives across all 254 should_flag=no records in the corpus. Worth
   re-checking if a future data source makes "was I wrong" phrasing common
   outside genuine one-sided-conflict framing.
 - Cue 2 is also taxonomy.md's M-layer only (the real cue is an unsupported
