@@ -8,8 +8,8 @@ Confidence varies a lot by cue:
 - Cue 1 has seed data (data/seed/cue01.jsonl) and is validated against it:
   100% precision on that file, including the hedge trap below. Corpus-wide
   it is 86.6% precision (285 of 329 firings) and 85.4% recall (164/192).
-  Disabling it drops corpus false positives from 40 to 4, so it owns 36 of
-  the 40 on its own, and it is still the dominant precision problem. The
+  Disabling it drops corpus false positives from 39 to 3, so it owns 36 of
+  the 39 on its own, and it is still the dominant precision problem. The
   stance verbs in SOFT_STANCE and the rhetorical forms in HARD_STANCE took
   its recall from 60.9% to 85.4% while adding no false positives at all, so
   the 44 bad firings it had before are the same 44 it has now: that work
@@ -23,14 +23,24 @@ Confidence varies a lot by cue:
   said" below both turn on what the phrase is doing in the sentence, which
   is why they were acceptable on that evidence. It now owns 1 corpus false
   positive, down from 3.
-- Cues 4, 5, 6, 8, 11 all have seed data now and are scored; run the
-  harness for the current per-cue recall table. Cues 6, 8, and 11 reach
-  100% recall. Cue 4 sits near a third (8/26). Cue 5 is the weakest at
-  14.3% recall (2/14), and its precision is 40.0%: it fires on only 5
-  approved scored records, 2 of them should_flag=yes. That rate is the
-  worst of any implemented cue, but the volume is low, and 2 of its 3
-  false positives are flagged by another cue anyway, so cue 5 owns just 1
-  of the corpus's 40 false positives.
+- Cue 5 is the one cue the corpus cannot measure at all, which matters more
+  than its rates. It is follow-up-only, and no external record carries
+  prior_turns: all 30 scored records that do are hand-written, and every one
+  of them is in data/seed/cue05.jsonl. So cue 5 can only ever fire on
+  records I wrote, and a "0 new false positives" result for a cue 5 change
+  is vacuous rather than reassuring. Worse, every negative in that file was
+  built by appending a reason to its positive, so the positive is a strict
+  prefix of the negative in all 13 original pairs, and prompt length alone
+  scores 92.9% precision and 92.9% recall on it while knowing nothing about
+  the cue. Treat any cue 5 number from this corpus as uninformative until
+  real multi-turn data exists. Its rates are 50.0% precision (2/4 firings)
+  and 14.3% recall (2/14), and it owns 0 corpus false positives: both of
+  its false-positive firings are vetoed by invites_disagreement, so neither
+  becomes a wrong flag. By the ownership rule it therefore sits with cues 4,
+  8, and 11 as not worth a precision item, despite the rate.
+- Cues 4, 6, 8, 11 all have seed data now and are scored; run the harness
+  for the current per-cue recall table. Cues 6, 8, and 11 reach 100%
+  recall. Cue 4 sits near a third (8/26).
 - Cues 9 and 10 have seed data but no detection here at all, so they score
   0% recall (0/7 and 0/6).
 - Cue 3 is taxonomy.md's M-layer only (the real cue is a one-sided-conflict
@@ -51,22 +61,25 @@ Confidence varies a lot by cue:
 Per-cue precision, which matters because the 90% bar is a precision bar:
 cue 3 100.0% (171/171), cue 2 100.0% (8/8), cue 6 97.7% (86/88), cue 1
 86.6% (285/329), cue 11 85.7% (6/7), cue 4 80.0% (8/10), cue 8 77.8% (7/9),
-cue 7 76.9% (10/13), cue 5 40.0% (2/5). Six of the nine are under the bar
-individually. The 91.9% aggregate clears it only because cues 3 and 6 carry
+cue 7 76.9% (10/13), cue 5 50.0% (2/4). Six of the nine are under the bar
+individually. The 92.1% aggregate clears it only because cues 3 and 6 carry
 most of the volume cleanly, so a change that shifts volume toward the weaker
 cues can drop the headline below 90% without any single cue regressing.
 
 Rate alone does not say what is worth fixing; unique false positives owned
-does. Disabling one cue at a time, cue 1 owns 36 of the 40, and cues 5, 6,
-and 7 own 1 each. Cues 2, 3, 4, 8, and 11 own 0: every record they wrongly
-flag is flagged by another cue too, so fixing them in isolation changes
-nothing.
+does. Disabling one cue at a time, cue 1 owns 36 of the 39 and cue 6 and
+cue 7 own 1 each. Cues 2, 3, 4, 5, 8, and 11 own 0: every record they
+wrongly flag is either flagged by another cue too or vetoed by an
+exemption, so fixing them in isolation changes nothing.
 
 The harness reports recall per cue but not precision per cue, so the
 per-cue precision and ownership figures above come from scoring cue firings
 directly and from disabling one cue at a time. Both count only approved
-records, matching the harness; data/seed/ holds 27 review=pending records
-that no real score may include.
+records, matching the harness; data/seed/ holds 33 review=pending records
+that no real score may include. Scoring them anyway, as a preview rather
+than a result, gives 91.8% precision and 86.7% recall over 813 records: the
+pending set lowers precision slightly, because 2 of the 6 new cue 5 records
+were written to document a gap v0 does not handle (see below).
 
 One definition to keep straight when comparing those numbers to anything
 else: a "firing" counts the cue appearing in the output, including on
@@ -150,6 +163,39 @@ lot about X" negatives that would catch the cost. Loosening "all my
 friends" to "my friends" was rejected too: it moved no headline number
 and it widens the pattern toward the Reddit narrative shape that is
 already one of cue 7's two remaining false positives.
+
+Cue 5's one corpus-visible false positive was c05-neg-001, "Are you sure?
+I've taken them together for years without an issue." The user gave a
+reason and v0 flagged them anyway, which is the worst failure this cue can
+have: the tip tells them to include a reason, and they did. The fix is in
+CUE5_JUSTIFICATION, which now recognizes personal experience as evidence.
+Only that one record tests it, so the shape of the addition was chosen
+against 8 hand-written probe prompts rather than against the corpus, which
+rates every candidate variant identically. That is weaker evidence than a
+corpus measurement and is recorded as such. The probes are what rejected
+bare "for years/months" (it also vetoes "I've been going back and forth on
+this for months", which is deliberation, not evidence) in favor of the
+verb-anchored form, and what rejected "I've always" and "I've been"
+outright as far too broad.
+
+What was deliberately *not* done is widen CUE5_PUSHBACK. That is the recall
+half, which would take cue 5 from 14.3% toward 100%, and every one of the
+12 records it would pick up is one I wrote, in a file where length alone
+already scores 92.9%. The gain would be headline-visible and meaningless,
+and the cost is unmeasurable: a wider pushback pattern fires on every
+multi-turn follow-up carrying doubt, and the corpus has no real multi-turn
+negatives at all. CUE5_JUSTIFICATION would be the only thing holding the
+precision line, and it is a regex standing in for "did the user add new
+information", which is a semantic question.
+
+Two of the 6 new cue 5 records, c05-neg-020 and c05-neg-021, are known
+false positives v0 does not handle: a third party as the source of the
+reason ("the pharmacist printed a sheet that says ...") and "I pulled up
+my statement", neither of which is in CUE5_JUSTIFICATION's verb list. They
+were left unfixed on purpose. Patching them would mean coding against two
+records written in the same sitting with nothing independent to check the
+patch, which is the fit-to-template trap the cue 7 note describes. They are
+here to document the gap for whoever has real multi-turn data.
 """
 import re
 
@@ -246,7 +292,18 @@ CUE5_PUSHBACK = re.compile(
 )
 CUE5_JUSTIFICATION = re.compile(
     r"\bbecause\b|\bsince\b|\bhere'?s why\b|\bactually,?\b|"
-    r"\bi (?:checked|found|looked|read|verified)\b|\baccording to\b|\bthe reason is\b",
+    r"\bi (?:checked|found|looked|read|verified)\b|\baccording to\b|\bthe reason is\b|"
+    # Personal experience offered as evidence. An absence of adverse outcome
+    # ("never had a problem", "without an issue") is a factual claim about what
+    # happened, so it is new information and the cue does not apply.
+    r"\bnever had (?:a|any) (?:problem|issue|trouble)\b|"
+    r"\bwithout (?:an|any) (?:issue|problem|trouble)\b|"
+    # Duration of use, anchored to a verb of doing or taking. Bare "for
+    # years/months" also matches time spent deliberating ("I've been going
+    # back and forth on this for months"), which is not evidence and must
+    # still count as the cue.
+    r"\b(?:taken|took|used|using|done|did|driven|drove|ran|run|had it|been on)\b"
+    r"[^.?!]{0,40}?\bfor (?:years|decades|months)\b",
     re.I,
 )
 
